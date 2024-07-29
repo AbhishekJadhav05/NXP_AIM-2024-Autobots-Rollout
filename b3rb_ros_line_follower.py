@@ -38,6 +38,8 @@ THRESHOLD_OBSTACLE_HORIZONTAL = 0.25
 THRESHOLD_RAMP_MIN = 0.75
 THRESHOLD_RAMP_MAX = 1.2
 
+TIME_PERIOD = 1/30
+
 #Min - 0.6179950833320618 and Max - 0.9302666783332825
 #Min - 0.4310002624988556 and Max - 1.9826102256774902
 class LineFollower(Node):
@@ -144,7 +146,7 @@ class LineFollower(Node):
 			# Calculate the magnitude of the x-component of the vector.
 			deviation = vectors.vector_1[1].x - vectors.vector_1[0].x
 			turn = deviation * 2 / vectors.image_width
-			turn = self.prevTurn*0.3 + turn*0.7
+			#turn = self.prevTurn*0.2 + turn*0.8
 			
 			speed = speed * (np.abs(math.cos(turn))**(1/3))
 			#print("ONE (1) Vector formed")
@@ -159,7 +161,7 @@ class LineFollower(Node):
 			deviation = half_width - middle_x
 			turn = deviation / half_width
 			#print(f"t - {turn}, p - {self.prevTurn} and oni san {turn*0.7+self.prevTurn*0.3}")			
-			turn = turn*0.7 + self.prevTurn*0.3
+			#turn = turn*0.8 + self.prevTurn*0.2
 			speed = speed * (np.abs(math.cos(turn)) **(1/5))
 			#print("TWO (2) Vectors formed.")
 
@@ -244,24 +246,25 @@ class LineFollower(Node):
 		
 		# process front ranges.
 		angle1 = theta - PI / 2
-		angles=[]
+		#angles=[]
 		for i in range(len(front_ranges)):
 			if (front_ranges[i] < THRESHOLD_OBSTACLE_VERTICAL):
 				self.obstacle_detected = True
-				#self.obsTurn = angle
+				self.obsTurn = angle1 + np.arctan(0.05/front_ranges[i])*np.sign(angle1)
 				#angles.append(angle)
 				flag1 = True
-			angles.append(angle1)
+				return
+			#angles.append(angle1)
 			angle1 += message.angle_increment
 
-		if flag1 is True:
-			closestRange = min(front_ranges)
-			index = front_ranges.index(closestRange)
-			angleAvoidance = angles[index]
-			angleSafe = np.arctan(0.1/min(list(front_ranges)))
-			print(f"Meow - {angleAvoidance} and meow {angleSafe} and lallal {min(list(front_ranges))}")
-			angle1 = angleAvoidance + angleSafe*np.abs(angleAvoidance)
-			self.obs = angle1
+		# if flag1 is True:
+		# 	closestRange = min(front_ranges)
+		# 	index = front_ranges.index(closestRange)
+		# 	angleAvoidance = angles[index]
+		# 	angleSafe = np.arctan(0.05/min(list(front_ranges)))
+		# 	print(f"Meow - {angleAvoidance} and meow {angleSafe} and lallal {min(list(front_ranges))}")
+		# 	angle1 = angleAvoidance + angleSafe*np.sign(angleAvoidance)
+		# 	self.obs = angle1
 
 		#angle1 = 
 
@@ -269,29 +272,30 @@ class LineFollower(Node):
 
 		# process side ranges.
 		side_ranges_left.reverse()
-		angles = []
+		#angles = []
 		for side_ranges in [side_ranges_left, side_ranges_right]:
 			angle2 = 0.0
 			for i in range(len(side_ranges)):
 
 				if (side_ranges[i] < THRESHOLD_OBSTACLE_HORIZONTAL):
 					self.obstacle_detected = True
-					#self.obsTurn = 
-					flag2 = True
-				angles.append(angle2)
+					self.obsTurn = angle2 + np.arctan(0.05/side_ranges[i])*np.sign(angle2)
+					return
+					#flag2 = True
+				#angles.append(angle2)
 				angle2 += message.angle_increment
 
-		if flag2 is True:
-			side_ranges_both = []
-			side_ranges_both.extend(side_ranges_left)
-			side_ranges_both.extend(side_ranges_right)
-			closestRangeSide = min(side_ranges_both)
-			index = side_ranges_both.index(closestRangeSide)
-			angleAvoidance = angles[index]
-			angleSafe = np.arctan(0.1/min(list(side_ranges_both)))
-			print(f"Meow - {angleAvoidance} and meow {angleSafe}")
-			angle2 = angleAvoidance + angleSafe*np.abs(angleAvoidance)
-			self.obs = angle2
+		# if flag2 is True:
+		# 	side_ranges_both = []
+		# 	side_ranges_both.extend(side_ranges_left)
+		# 	side_ranges_both.extend(side_ranges_right)
+		# 	closestRangeSide = min(side_ranges_both)
+		# 	index = side_ranges_both.index(closestRangeSide)
+		# 	angleAvoidance = angles[index]
+		# 	angleSafe = np.arctan(0.05/min(list(side_ranges_both)))
+		# 	print(f"Meow - {angleAvoidance} and meow {angleSafe}")
+		# 	angle2 = angleAvoidance + angleSafe*np.sign(angleAvoidance)
+		# 	self.obs = angle2
 
 		
 		#angleOfAvoidRight = np.arctan(10/min(list(side_ranges_right)))
@@ -300,22 +304,20 @@ class LineFollower(Node):
 		#Considering both angles
 		#if angle != theta - PI / 2 and angle2 != 0:
 		#	self.obs = angle1*0.6 + angle2*0.4
-		if flag2 is True and flag1 is True:
-			print("Both flag true condition.")
-			self.obs = angle1*0.6 + angle2*0.4
-			return
+		# if flag2 is True and flag1 is True:
+		# 	print("Both flag true condition.")
+		# 	self.obs = angle1*0.7 + angle2*0.3
+		# 	return
 		
-		if flag1 is True or flag2 is True:
-			return
+		# if flag1 is True or flag2 is True:
+		# 	return
 
 		self.obstacle_detected = False
 
 		# RAMP
-		angle = theta - PI / 2
 		l = len(front_ranges)
 		new_front_ranges = front_ranges[int(l/6):int(5*l/6)]
-		#for i in range(len(front_ranges[0:])):
-			#angle += message.angle_increment
+
 		for i in range(len(new_front_ranges)):
 			if (new_front_ranges[i] < THRESHOLD_RAMP_MAX and new_front_ranges[i] > THRESHOLD_RAMP_MIN):
 				self.ramp_detected = True
@@ -325,8 +327,6 @@ class LineFollower(Node):
 				# 	self.max = new_front_ranges[i]
 				# print(f"Min - {self.min} and Max - {self.max} and  current {new_front_ranges[i]}")
 				return
-
-			#angle += message.angle_increment
 
 		self.ramp_detected = False
 
@@ -341,6 +341,7 @@ class LineFollower(Node):
 		t4 = +1.0 - 2.0 * (y * y + z * z)
 		yaw_z = np.arctan2(t3, t4)
 		self.status[2] = yaw_z
+
 
 def main(args=None):
 	rclpy.init(args=args)
