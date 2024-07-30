@@ -24,7 +24,7 @@ SPEED_MAX = 1.4
 SPEED_25_PERCENT = SPEED_MAX / 4
 SPEED_50_PERCENT = SPEED_25_PERCENT * 2
 SPEED_75_PERCENT = SPEED_25_PERCENT * 3
-THRESHOLD_OBSTACLE_VERTICAL = 0.3
+THRESHOLD_OBSTACLE_VERTICAL = 0.4
 THRESHOLD_OBSTACLE_HORIZONTAL = 0.25
 THRESHOLD_RAMP_MIN = 0.7
 THRESHOLD_RAMP_MAX = 1.2
@@ -145,7 +145,7 @@ class LineFollower(Node):
         if self.obstacle_detected is True:
             # TODO: participants need to decide action on detection of obstacle.
             speed = SPEED_50_PERCENT*0.7
-            turn = -0.95*self.obs + turn*0.05
+            turn = -0.9*self.obs + turn*0.1
             print("obstacle detected") 
         #While goind down/ after ramp to avoid bouncing of buggs
         if self.prevSpeed < 0.75 and speed > 0.64 and self.obstacle_detected is False:
@@ -201,7 +201,7 @@ class LineFollower(Node):
                 #print("FRONT",min(front_ranges))
                 self.obstacle_detected = True
                 angleAvoidance = angle1
-                angleSafe = np.arctan(0.1/front_ranges[i])
+                angleSafe = np.arctan(0.2/front_ranges[i])
                 angle1 = angleAvoidance + np.abs(angleSafe)*np.sign(angleAvoidance) 
                 '''+ np.abs(angleSafe)'''
                 self.obs = angle1
@@ -234,10 +234,10 @@ class LineFollower(Node):
                 #print("LEFT",min(side_ranges_left))
                 self.obstacle_detected = True
                 angleAvoidance = angle2
-                angleSafe = np.arctan(0.1/side_ranges_left[i])
+                angleSafe = np.arctan(0.2/side_ranges_left[i])
                 angle2 = angleAvoidance + np.abs(angleSafe)*np.sign(angleAvoidance)
-                self.obs = 1*angle2
-                angles.append(1*angle2)
+                self.obs = angle2
+                angles.append(angle2)
                 break
             angle2 += message.angle_increment
         # process side Right
@@ -248,7 +248,7 @@ class LineFollower(Node):
                 #print("RIGHT",min(side_ranges_right))
                 self.obstacle_detected = True
                 angleAvoidance = angle3
-                angleSafe = np.arctan(0.1/side_ranges_right[i])
+                angleSafe = np.arctan(0.2/side_ranges_right[i])
                 angle3 = angleAvoidance + np.abs(angleSafe)*np.sign(angleAvoidance)
                 self.obs = angle3
                 angles.append(angle3)
