@@ -5,9 +5,11 @@ from synapse_msgs.msg import TrafficStatus
 import cv2
 import numpy as np
 
+
 from sensor_msgs.msg import CompressedImage
 
 QOS_PROFILE_DEFAULT = 10
+#stop_sign_cascade = cv2.CascadeClassifier('cascade_stop_sign.xml')
 
 # from std_msgs.msg import Int16
 
@@ -57,11 +59,29 @@ class ObjectRecognizer(Node):
 		# msgTemp.data = len(image[0][0]) #240 * 320
 		# self.publisher_temp.publish(msgTemp)
 
-		traffic_status_message = TrafficStatus()
+		traffic_status = TrafficStatus()
 
 		# NOTE: participants need to implement logic for recognizing traffic signs.
+		'''gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+		stop_signs = []
+		
+		try:
+			stop_signs = stop_sign_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))			
+		except:
+			pass
+		
+		if len(stop_signs) > 0:
+			traffic_status.stop_sign = True
+		else:
+			traffic_status.stop_sign = False
+		#print(stop_signs)'''
+        
+		self.publisher_traffic.publish(traffic_status)
 
-		self.publisher_traffic.publish(traffic_status_message)
+'''        # For visualization purposes (optional)
+        for (x, y, w, h) in stop_signs:
+            cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.putText(image, 'Stop Sign', (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)'''
 
 
 def main(args=None):
