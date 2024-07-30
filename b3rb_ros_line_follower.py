@@ -41,12 +41,12 @@ class LineFollower(Node):
         self.prevSpeed, self.prevTurn = 0.75, 0
         self.min, self.max = 10, 0
         self.obs = 0
-        # Subscription to get Pose
-        self.subscription_pose = self.create_subscription(
-            PoseWithCovarianceStamped,
-            '/pose',
-            self.pose_callback,
-            QOS_PROFILE_DEFAULT)
+        # # Subscription to get Pose
+        # self.subscription_pose = self.create_subscription(
+        #     PoseWithCovarianceStamped,
+        #     '/pose',
+        #     self.pose_callback,
+        #     QOS_PROFILE_DEFAULT)
         # Subscription for edge vectors.
         self.subscription_vectors = self.create_subscription(
             EdgeVectors,
@@ -112,18 +112,17 @@ class LineFollower(Node):
 
         # NOTE: participants may improve algorithm for line follower.
         if (vectors.vector_count == 0):  # none.
-            speed = SPEED_50_PERCENT * 0.65
+            speed = SPEED_25_PERCENT
             turn = self.prevTurn*0.95
             #print("ZERO (0) Vectors formed")
         if (vectors.vector_count == 1):  # curve.
             # Calculate the magnitude of the x-component of the vector.
             deviation = vectors.vector_1[1].x - vectors.vector_1[0].x
             p_turn = deviation * 2 / vectors.image_width
-            #turn = self.prevTurn*0.2 + p_turn*0.8
             speed = SPEED_75_PERCENT * (np.abs(math.cos(turn))**(1/2))
-            #speed = speed * (np.abs(math.cos(turn))**(1/3))
+            #speed = speed * (np.abs(math.cos(turn))**(1/2))
             #print("ONE (1) Vector formed")
-            #speed = 0.05
+
         if (vectors.vector_count == 2):  # straight.
             # Calculate the middle point of the x-components of the vectors.
             middle_x_left = (vectors.vector_1[0].x + vectors.vector_1[1].x) / 2
@@ -131,12 +130,10 @@ class LineFollower(Node):
             middle_x = (middle_x_left + middle_x_right) / 2
             deviation = half_width - middle_x
             p_turn = deviation * 2 / half_width
-            #print(f"t - {turn}, p - {self.prevTurn} and oni san {turn*0.7+self.prevTurn*0.3}")         
-            #turn = turn*0.9 + self.prevTurn*0.1
-            speed = SPEED_MAX
+            speed = speed * (np.abs(math.cos(turn))**(1/4))
+            #speed = SPEED_MAX
             #print("TWO (2) Vectors formed.")
         
-        #
         deviation_magnitude = abs(p_turn)
         kP = kP_base * (1 + deviation_magnitude)
         kD = kD_base * (1 + deviation_magnitude)
@@ -151,12 +148,12 @@ class LineFollower(Node):
             # TODO: participants need to decide action on detection of ramp/bridge.
             speed = 0.65
             '''change it to reduce speed close to the ramp'''
-            #print("ramp/bridge detected")
+            print("ramp/bridge detected")
         if self.obstacle_detected is True:
             # TODO: participants need to decide action on detection of obstacle.
             speed = SPEED_50_PERCENT*0.7
             turn = 0.8*self.obs + turn*0.2
-            #print("obstacle detected") 
+            print("obstacle detected") 
         #While goind down/ after ramp to avoid bouncing of buggs
         if self.prevSpeed < 0.7 and speed > 0.6 and self.obstacle_detected is False:
             #print("RAMP CASE ")
@@ -261,7 +258,6 @@ class LineFollower(Node):
         
         self.obstacle_detected = False
         # RAMP
-        angle = theta - PI / 2
         l = len(front_ranges)
         new_front_ranges = front_ranges[int(l/6):int(5*l/6)]
         for i in range(len(new_front_ranges)):
