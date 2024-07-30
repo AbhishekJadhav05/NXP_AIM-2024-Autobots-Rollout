@@ -73,6 +73,7 @@ class LineFollower(Node):
         self.traffic_status = TrafficStatus()
         self.obstacle_detected = False
         self.ramp_detected = False
+        self.LoopSetter()
     """ Operates the rover in manual mode by publishing on /cerebri/in/joy.
         Args:
             speed: the speed of the car in float. Range = [-1.0, +1.0];
@@ -107,6 +108,8 @@ class LineFollower(Node):
         kP_base = 0.65
         kD_base = 0.35
         
+        self.speed, self.turn = 0.0, 0.0
+
         # NOTE: participants may improve algorithm for line follower.
         if (vectors.vector_count == 0):  # none.
             speed = SPEED_50_PERCENT * 0.65
@@ -158,9 +161,8 @@ class LineFollower(Node):
         if self.prevSpeed < 0.7 and speed > 0.6 and self.obstacle_detected is False:
             #print("RAMP CASE ")
             speed = 0.995*self.prevSpeed + 0.005*speed
-        self.prevSpeed = speed
-        self.prevTurn = turn
-        self.rover_move_manual_mode(speed, turn)
+        self.speed = speed
+        self.turn = turn
     """ Updates instance member with traffic status message received from /traffic_status.
         Args:
             message: "~/cognipilot/cranium/src/synapse_msgs/msg/TrafficStatus.msg"
@@ -280,6 +282,26 @@ class LineFollower(Node):
         yaw_z = np.arctan2(t3, t4)
         self.status[2] = yaw_z
         
+    def MainLoop(self):
+        self.prevSpeed = self.speed
+        self.prevTurn = self.turn
+        self.rover_move_manual_mode(self.speed, self.turn)
+
+    def LoopSetter(self):
+        """
+        This function is called when the node is started. It runs the main loop at a fixed rate.
+        """
+        
+        timerPeriod = 1/30
+        
+        try:
+            self.timer = self.create_timer(timerPeriod, self.MainLoop)
+
+        except KeyboardInterrupt:
+            print("ROS Interrupt Exception")
+            
+            exit(1)
+
 def main(args=None):
     rclpy.init(args=args)
     line_follower = LineFollower()
