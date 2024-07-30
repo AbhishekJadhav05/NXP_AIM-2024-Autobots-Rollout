@@ -131,8 +131,8 @@ class LineFollower(Node):
             middle_x = (middle_x_left + middle_x_right) / 2
             deviation = half_width - middle_x
             p_turn = deviation * 2 / half_width
-            speed = speed * (np.abs(math.cos(turn))**(1/4))
-            #speed = SPEED_MAX
+            #speed = speed * (np.abs(math.cos(turn))**(1/4))
+            speed = SPEED_MAX
             #print("TWO (2) Vectors formed.")
         
         deviation_magnitude = abs(p_turn)
