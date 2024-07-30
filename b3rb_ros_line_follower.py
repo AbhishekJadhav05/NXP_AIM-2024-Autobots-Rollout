@@ -24,8 +24,8 @@ SPEED_MAX = 1.4
 SPEED_25_PERCENT = SPEED_MAX / 4
 SPEED_50_PERCENT = SPEED_25_PERCENT * 2
 SPEED_75_PERCENT = SPEED_25_PERCENT * 3
-THRESHOLD_OBSTACLE_VERTICAL = 0.35
-THRESHOLD_OBSTACLE_HORIZONTAL = 0.35
+THRESHOLD_OBSTACLE_VERTICAL = 0.3
+THRESHOLD_OBSTACLE_HORIZONTAL = 0.25
 THRESHOLD_RAMP_MIN = 0.7
 THRESHOLD_RAMP_MAX = 1.2
 #Min - 0.6179950833320618 and Max - 0.9302666783332825
@@ -42,13 +42,7 @@ class LineFollower(Node):
         self.min, self.max = 10, 0
         self.obs = 0
         self.speed, self.turn = 0.0, 0.0
-        # # Subscription to get Pose
-        # self.subscription_pose = self.create_subscription(
-        #     PoseWithCovarianceStamped,
-        #     '/pose',
-        #     self.pose_callback,
-        #     QOS_PROFILE_DEFAULT)
-        # Subscription for edge vectors.
+
         self.subscription_vectors = self.create_subscription(
             EdgeVectors,
             '/edge_vectors',
@@ -109,8 +103,6 @@ class LineFollower(Node):
         kP_base = 0.65
         kD_base = 0.35
         
-        self.speed, self.turn = 0.0, 0.0
-
         # NOTE: participants may improve algorithm for line follower.
         if (vectors.vector_count == 0):  # none.
             speed = SPEED_25_PERCENT
@@ -156,9 +148,9 @@ class LineFollower(Node):
             turn = -0.95*self.obs + turn*0.05
             print("obstacle detected") 
         #While goind down/ after ramp to avoid bouncing of buggs
-        if self.prevSpeed < 0.7 and speed > 0.6 and self.obstacle_detected is False:
-            #print("RAMP CASE ")
+        if self.prevSpeed < 0.75 and speed > 0.64 and self.obstacle_detected is False:
             speed = 0.995*self.prevSpeed + 0.005*speed
+        
         self.speed = speed
         self.turn = turn
     """ Updates instance member with traffic status message received from /traffic_status.
@@ -209,8 +201,8 @@ class LineFollower(Node):
                 #print("FRONT",min(front_ranges))
                 self.obstacle_detected = True
                 angleAvoidance = angle1
-                angleSafe = np.arctan(1/front_ranges[i])
-                angle1 = angleAvoidance #+ np.abs(angleSafe)*np.sign(angleAvoidance) 
+                angleSafe = np.arctan(0.1/front_ranges[i])
+                angle1 = angleAvoidance + np.abs(angleSafe)*np.sign(angleAvoidance) 
                 '''+ np.abs(angleSafe)'''
                 self.obs = angle1
                 angles.append(angle1)
@@ -242,8 +234,8 @@ class LineFollower(Node):
                 #print("LEFT",min(side_ranges_left))
                 self.obstacle_detected = True
                 angleAvoidance = angle2
-                angleSafe = np.arctan(1/side_ranges_left[i])
-                angle2 = angleAvoidance #+ np.abs(angleSafe)*np.sign(angleAvoidance)
+                angleSafe = np.arctan(0.1/side_ranges_left[i])
+                angle2 = angleAvoidance + np.abs(angleSafe)*np.sign(angleAvoidance)
                 self.obs = 1*angle2
                 angles.append(1*angle2)
                 break
@@ -256,8 +248,8 @@ class LineFollower(Node):
                 #print("RIGHT",min(side_ranges_right))
                 self.obstacle_detected = True
                 angleAvoidance = angle3
-                angleSafe = np.arctan(1/side_ranges_right[i])
-                angle3 = angleAvoidance #+ np.abs(angleSafe)*np.sign(angleAvoidance)
+                angleSafe = np.arctan(0.1/side_ranges_right[i])
+                angle3 = angleAvoidance + np.abs(angleSafe)*np.sign(angleAvoidance)
                 self.obs = angle3
                 angles.append(angle3)
                 break

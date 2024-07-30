@@ -9,9 +9,13 @@ import numpy as np
 from sensor_msgs.msg import CompressedImage
 
 QOS_PROFILE_DEFAULT = 10
+
 #stop_sign_cascade = cv2.CascadeClassifier('cascade_stop_sign.xml')
 
-# from std_msgs.msg import Int16
+import os
+#current_dir = os.path.dirname(os.path.abspath(__file__))
+cascade_path = '~/cognipilot/cranium/src/b3rb_ros_line_follower/b3rb_ros_line_follower/cascade_stop_sign.xml'
+stop_sign_cascade = cv2.CascadeClassifier(cascade_path)
 
 class ObjectRecognizer(Node):
 	""" Initializes object recognizer node with the required publishers and subscriptions.
@@ -34,12 +38,6 @@ class ObjectRecognizer(Node):
 			TrafficStatus,
 			'/traffic_status',
 			QOS_PROFILE_DEFAULT)
-		
-		# TEMP PUBLISHER TO ANALYSE DATA
-		# self.publisher_temp = self.create_publisher(
-		# 	Int16,
-		# 	'/temp',
-		# 	QOS_PROFILE_DEFAULT)
 
 	""" Analyzes the image received from /camera/image_raw/compressed to detect traffic signs.
 		Publishes the existence of traffic signs in the image on the /traffic_status topic.
@@ -55,14 +53,10 @@ class ObjectRecognizer(Node):
 		np_arr = np.frombuffer(message.data, np.uint8)
 		image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
 
-		# msgTemp = Int16()
-		# msgTemp.data = len(image[0][0]) #240 * 320
-		# self.publisher_temp.publish(msgTemp)
-
 		traffic_status = TrafficStatus()
 
 		# NOTE: participants need to implement logic for recognizing traffic signs.
-		'''gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+		gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 		stop_signs = []
 		
 		try:
@@ -72,10 +66,10 @@ class ObjectRecognizer(Node):
 		
 		if len(stop_signs) > 0:
 			traffic_status.stop_sign = True
+			print(stop_signs)
 		else:
 			traffic_status.stop_sign = False
-		#print(stop_signs)'''
-        
+		
 		self.publisher_traffic.publish(traffic_status)
 
 '''        # For visualization purposes (optional)
