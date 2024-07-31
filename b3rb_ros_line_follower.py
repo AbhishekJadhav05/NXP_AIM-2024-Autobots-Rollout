@@ -142,7 +142,11 @@ class LineFollower(Node):
             #print("ZERO (0) Vectors formed")
 
         if (self.traffic_status.stop_sign is True):
-            speed = SPEED_MIN
+            self.speed = self.prevSpeed*0.8
+            if self.prevSpeed < 0.1:
+                self.speed = SPEED_MIN
+            self.prevSpeed = self.speed
+            return
             #print("stop sign detected")
         if self.ramp_detected is True:
             # TODO: participants need to decide action on detection of ramp/bridge.

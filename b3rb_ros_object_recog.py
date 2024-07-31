@@ -10,17 +10,15 @@ from sensor_msgs.msg import CompressedImage
 
 QOS_PROFILE_DEFAULT = 10
 
-#stop_sign_cascade = cv2.CascadeClassifier('cascade_stop_sign.xml')
+#Custom
 from ultralytics import YOLO
-#model_path = "best(1).pt"  #path to the weights file
-import os
+import logging
+
+logging.getLogger('ultralytics').setLevel(logging.CRITICAL)
 
 #path = os.path.join(os.path.dirname(__file__),'best(1).pt')
 path = '/home/gitaansh/cognipilot/cranium/src/b3rb_ros_line_follower/b3rb_ros_line_follower/best(1).pt'
 model = YOLO(path)
-#current_dir = os.path.dirname(os.path.abspath(__file__))
-#path = '~/cognipilot/cranium/src/b3rb_ros_line_follower/b3rb_ros_line_follower/cascade_stop_sign.xml'
-# stop_sign_cascade = cv2.CascadeClassifier(cascade_path)
 
 class ObjectRecognizer(Node):
 	""" Initializes object recognizer node with the required publishers and subscriptions.
@@ -59,31 +57,16 @@ class ObjectRecognizer(Node):
 		image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
 
 		traffic_status = TrafficStatus()
-
-		# NOTE: participants need to implement logic for recognizing traffic signs.
-		# gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-		# stop_signs = []
 		
-		# try:
-		# 	stop_signs = stop_sign_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))			
-		# except:
-		# 	pass
-		
-		# if len(stop_signs) > 0:
-		# 	traffic_status.stop_sign = True
-		# 	print(stop_signs)
-		# else:
-		# 	traffic_status.stop_sign = False
-
 		results = model.predict(source=image, imgsz=640, conf=0.25)
 		for result in results:
 			if result.boxes:  
-				#print(result.names)
-				#if result.boxes.conf.tolist() > 0.9:
-				#print('Detected Stop Sign')
-				print("Confidences:", result.boxes.conf.tolist()[0]) 
-				result.boxes.conf
-				#if result.boxes.conf.tolist() 
+				if result.boxes.conf.tolist()[0] > 0.9:
+					print(result.boxes.conf.tolist()[0])
+					traffic_status.stop_sign = True
+				else:
+					traffic_status.stop_sign = False
+
 		
 		self.publisher_traffic.publish(traffic_status)
 
