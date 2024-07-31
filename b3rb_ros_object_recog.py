@@ -11,10 +11,15 @@ from sensor_msgs.msg import CompressedImage
 QOS_PROFILE_DEFAULT = 10
 
 #stop_sign_cascade = cv2.CascadeClassifier('cascade_stop_sign.xml')
-
+from ultralytics import YOLO
+#model_path = "best(1).pt"  #path to the weights file
 import os
+
+#path = os.path.join(os.path.dirname(__file__),'best(1).pt')
+path = '/home/gitaansh/cognipilot/cranium/src/b3rb_ros_line_follower/b3rb_ros_line_follower/best(1).pt'
+model = YOLO(path)
 #current_dir = os.path.dirname(os.path.abspath(__file__))
-# cascade_path = '~/cognipilot/cranium/src/b3rb_ros_line_follower/b3rb_ros_line_follower/cascade_stop_sign.xml'
+#path = '~/cognipilot/cranium/src/b3rb_ros_line_follower/b3rb_ros_line_follower/cascade_stop_sign.xml'
 # stop_sign_cascade = cv2.CascadeClassifier(cascade_path)
 
 class ObjectRecognizer(Node):
@@ -69,6 +74,16 @@ class ObjectRecognizer(Node):
 		# 	print(stop_signs)
 		# else:
 		# 	traffic_status.stop_sign = False
+
+		results = model.predict(source=image, imgsz=640, conf=0.25)
+		for result in results:
+			if result.boxes:  
+				#print(result.names)
+				#if result.boxes.conf.tolist() > 0.9:
+				#print('Detected Stop Sign')
+				print("Confidences:", result.boxes.conf.tolist()[0]) 
+				result.boxes.conf
+				#if result.boxes.conf.tolist() 
 		
 		self.publisher_traffic.publish(traffic_status)
 

@@ -21,17 +21,17 @@ RIGHT_TURN = -1.0
 TURN_MIN = 0.0
 TURN_MAX = 1.0
 SPEED_MIN = 0.0
-SPEED_MAX = 1.4
+SPEED_MAX = 1.45
 SPEED_25_PERCENT = SPEED_MAX / 4
 SPEED_50_PERCENT = SPEED_25_PERCENT * 2
 SPEED_75_PERCENT = SPEED_25_PERCENT * 3
 
-THRESHOLD_OBSTACLE_VERTICAL = 0.6
+THRESHOLD_OBSTACLE_VERTICAL = 0.5
 THRESHOLD_OBSTACLE_HORIZONTAL = 0.25
 THRESHOLD_RAMP_MIN = 0.7
 THRESHOLD_RAMP_MAX = 1.1
 
-SAFE_DISTANCE = 0.275
+SAFE_DISTANCE = 0.2
 #Min - 0.6179950833320618 and Max - 0.9302666783332825
 #Min - 0.4310002624988556 and Max - 1.9826102256774902
 class LineFollower(Node):
@@ -149,10 +149,11 @@ class LineFollower(Node):
             speed = 0.55
             '''change it to reduce speed close to the ramp'''
             print("ramp/bridge detected")
+
         if self.obstacle_detected is True and vectors.vector_count != 0:
             # TODO: participants need to decide action on detection of obstacle.
             speed = SPEED_50_PERCENT*0.55
-            turn = -0.95*self.obs + turn*0.05
+            turn = -self.obs#0.95*self.obs + turn*0.05
             print("obstacle detected") 
         #While goind down/ after ramp to avoid bouncing of buggs
         if self.prevSpeed < 0.75 and speed > 0.54 and self.obstacle_detected is False:
@@ -244,7 +245,7 @@ class LineFollower(Node):
                 self.obstacle_detected = True
                 angleAvoidance = angle2
                 angleSafe = np.arctan(SAFE_DISTANCE/side_ranges_left[i])
-                angle2 = angleAvoidance + 0.15#+ np.abs(angleSafe)*np.sign(angleAvoidance)
+                angle2 = angleAvoidance + np.abs(angleSafe)*np.sign(angleAvoidance)
                 self.obs = angle2
                 angles.append(angle2)
                 close[0] = side_ranges_left[i]
@@ -259,32 +260,30 @@ class LineFollower(Node):
                 self.obstacle_detected = True
                 angleAvoidance = angle3
                 angleSafe = np.arctan(SAFE_DISTANCE/side_ranges_right[i])
-                angle3 = angleAvoidance + 0.15#+ np.abs(angleSafe)*np.sign(angleAvoidance)
+                angle3 = angleAvoidance + np.abs(angleSafe)*np.sign(angleAvoidance)
                 self.obs = angle3
                 angles.append(angle3)
                 close[1] = side_ranges_right[i]
                 break
             angle3 += message.angle_increment
-        '''if len(angles) == 3:
+        if len(angles) == 3:
             self.obs = np.dot(angles, [0.4,0.3,0.3])
             return
         if len(angles) == 2 and angles[0] == angle1:
-            self.obs = np.dot(angles, [0.6,0.4])
-            return'''
+            self.obs = np.dot(angles, [0.3,0.7])
+            return
         if len(angles) == 2:
             if(close[0] < close[1]):
-                self.obs = np.dot(angles, [-0.1,-0.9])
+                self.obs = np.dot(angles, [0.2,0.8])
             if(close[0] > close[1]):
-                self.obs = np.dot(angles, [0.9,0.1])
+                self.obs = np.dot(angles, [0.8,0.2])
         if len(angles) == 1:
             return
         
         self.obstacle_detected = False
         # RAMP
-        l = len(front_ranges)
-        new_front_ranges = front_ranges[int(l/6):int(5*l/6)]
-        for i in range(len(new_front_ranges)):
-            if (new_front_ranges[i] < THRESHOLD_RAMP_MAX and new_front_ranges[i] > THRESHOLD_RAMP_MIN):
+        for i in range(len(front_ranges)):
+            if (front_ranges[i] < THRESHOLD_RAMP_MAX and front_ranges[i] > THRESHOLD_RAMP_MIN):
                 self.ramp_detected = True
                 return
             
