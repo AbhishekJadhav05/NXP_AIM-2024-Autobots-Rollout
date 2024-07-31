@@ -224,14 +224,14 @@ class LineFollower(Node):
             if (front_ranges[i] < THRESHOLD_OBSTACLE_VERTICAL):
                 #print("FRONT",min(front_ranges))
                 self.obstacle_detected = True
-                angleAvoidance = angle12
+                angleAvoidance = 0#angle12
                 angleSafe = np.arctan(SAFE_DISTANCE_STRAIGHT/front_ranges[i])
                 angle12 = angleAvoidance + np.abs(angleSafe)*np.sign(angleAvoidance) 
-                print(angle1, angle12)
+                #print(angle1, angle12)
                 #angle one always has the opp sign as angle 12
-                angle1 = (angle1 - angle12)/2
+                #angle1 = (angle1 - angle12)/2
                 self.obs = angle1
-                print(angle1)
+                #print(angle1)
 
                 '''+ np.abs(angleSafe)'''
                 # self.obs = angle12
@@ -281,6 +281,8 @@ class LineFollower(Node):
             return
         
         self.obstacle_detected = False
+        min_distance_left = min(side_ranges_left)
+        min_distance_right = min(side_ranges_right)
         # RAMP
         l = len(front_ranges)
         new_front_ranges = front_ranges[int(l/6):int(5*l/6)]
@@ -288,6 +290,15 @@ class LineFollower(Node):
             if (new_front_ranges[i] < THRESHOLD_RAMP_MAX and new_front_ranges[i] > THRESHOLD_RAMP_MIN):
                 self.ramp_detected = True
                 return
+            
+        if self.obstacle_detected:
+        # Compare distances on both sides to decide turn priority
+            if min_distance_left < min_distance_right:
+            # Obstacle is closer on the left side, turn right
+                self.obs = -1 * (THRESHOLD_OBSTACLE_HORIZONTAL / min_distance_left)
+            else:
+            # Obstacle is closer on the right side, turn left
+                self.obs = (THRESHOLD_OBSTACLE_HORIZONTAL / min_distance_right)
             
         self.ramp_detected = False
         
