@@ -42,7 +42,7 @@ class LineFollower(Node):
     def __init__(self):
         super().__init__('line_follower')
         self.status = [0, 0, 0]
-        self.prevSpeed, self.prevTurn = 0.75, 0
+        self.prevSpeed, self.prevTurn = SPEED_MAX, 0
         self.min, self.max = 10, 0
         self.obs = 0
         self.speed, self.turn = 0.0, 0.0
@@ -108,10 +108,7 @@ class LineFollower(Node):
         kD_base = 0.35
         
         # NOTE: participants may improve algorithm for line follower.
-        if (vectors.vector_count == 0):  # none.
-            speed = SPEED_25_PERCENT
-            turn = self.prevTurn*0.95
-            #print("ZERO (0) Vectors formed")
+        
         if (vectors.vector_count == 1):  # curve.
             # Calculate the magnitude of the x-component of the vector.
             deviation = vectors.vector_1[1].x - vectors.vector_1[0].x
@@ -127,8 +124,8 @@ class LineFollower(Node):
             middle_x = (middle_x_left + middle_x_right) / 2
             deviation = half_width - middle_x
             p_turn = deviation * 2 / half_width
-            #speed = speed * (np.abs(math.cos(turn))**(1/4))
-            speed = SPEED_MAX
+            speed = speed * (np.abs(math.cos(turn))**(1/4))
+            #speed = SPEED_MAX
             #print("TWO (2) Vectors formed.")
         
         deviation_magnitude = abs(p_turn)
@@ -137,7 +134,13 @@ class LineFollower(Node):
         derivative_turn = (turn - self.prevTurn)
 
         turn = kP * p_turn + kD * derivative_turn
-            
+
+        if (vectors.vector_count == 0):  # none.
+            speed = SPEED_25_PERCENT
+
+            turn = self.prevTurn*0.95
+            #print("ZERO (0) Vectors formed")
+
         if (self.traffic_status.stop_sign is True):
             speed = SPEED_MIN
             #print("stop sign detected")
@@ -146,13 +149,13 @@ class LineFollower(Node):
             speed = 0.55
             '''change it to reduce speed close to the ramp'''
             print("ramp/bridge detected")
-        if self.obstacle_detected is True:
+        if self.obstacle_detected is True and vectors.vector_count != 0:
             # TODO: participants need to decide action on detection of obstacle.
             speed = SPEED_50_PERCENT*0.55
             turn = -0.95*self.obs + turn*0.05
             print("obstacle detected") 
         #While goind down/ after ramp to avoid bouncing of buggs
-        if self.prevSpeed < 0.7 and speed > 0.54 and self.obstacle_detected is False:
+        if self.prevSpeed < 0.75 and speed > 0.54 and self.obstacle_detected is False:
             speed = 0.995*self.prevSpeed + 0.005*speed
         
         self.speed = speed
