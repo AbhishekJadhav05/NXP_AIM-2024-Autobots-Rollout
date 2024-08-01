@@ -21,15 +21,15 @@ RIGHT_TURN = -1.0
 TURN_MIN = 0.0
 TURN_MAX = 1.0
 SPEED_MIN = 0.0
-SPEED_MAX = 1.45
+SPEED_MAX = 1.4
 SPEED_25_PERCENT = SPEED_MAX / 4
 SPEED_50_PERCENT = SPEED_25_PERCENT * 2
 SPEED_75_PERCENT = SPEED_25_PERCENT * 3
 
 THRESHOLD_OBSTACLE_VERTICAL = 0.5
 THRESHOLD_OBSTACLE_HORIZONTAL = 0.25
-THRESHOLD_RAMP_MIN = 0.7
-THRESHOLD_RAMP_MAX = 1.1
+THRESHOLD_RAMP_MIN = 0.9#0.7
+THRESHOLD_RAMP_MAX = 1#1.1
 
 SAFE_DISTANCE = 0.2
 #Min - 0.6179950833320618 and Max - 0.9302666783332825
@@ -69,6 +69,7 @@ class LineFollower(Node):
             '/scan',
             self.lidar_callback,
             QOS_PROFILE_DEFAULT)
+        
         self.traffic_status = TrafficStatus()
         self.obstacle_detected = False
         self.ramp_detected = False
@@ -108,12 +109,17 @@ class LineFollower(Node):
         kD_base = 0.35
         
         # NOTE: participants may improve algorithm for line follower.
-        
+        if (vectors.vector_count == 0):  # none.
+            speed = SPEED_25_PERCENT
+            p_turn = self.prevTurn*0.95
+            #print("ZERO (0) Vectors formed")    
+
+
         if (vectors.vector_count == 1):  # curve.
             # Calculate the magnitude of the x-component of the vector.
             deviation = vectors.vector_1[1].x - vectors.vector_1[0].x
             p_turn = deviation * 2 / vectors.image_width
-            speed = SPEED_75_PERCENT * (np.abs(math.cos(turn))**(1/2))
+            speed = SPEED_75_PERCENT * (np.abs(math.cos(turn))**(1/2)) * 0.9
             #speed = speed * (np.abs(math.cos(turn))**(1/2))
             #print("ONE (1) Vector formed")
 
@@ -135,34 +141,31 @@ class LineFollower(Node):
 
         turn = kP * p_turn + kD * derivative_turn
 
-        if (vectors.vector_count == 0):  # none.
-            speed = SPEED_25_PERCENT
-
-            turn = self.prevTurn*0.95
-            #print("ZERO (0) Vectors formed")
-
-        if (self.traffic_status.stop_sign is True):
-            self.speed = self.prevSpeed*0.8
-            if self.prevSpeed < 0.1:
-                self.speed = SPEED_MIN
-            self.prevSpeed = self.speed
-            return
-            #print("stop sign detected")
+        
         if self.ramp_detected is True:
             # TODO: participants need to decide action on detection of ramp/bridge.
             speed = 0.55
             '''change it to reduce speed close to the ramp'''
-            print("ramp/bridge detected")
+            #print("ramp/bridge detected")
+
+        #While goind down/ after ramp to avoid bouncing of buggs
+        if self.prevSpeed < 0.75 and speed > 0.54 and self.obstacle_detected is False:
+            speed = 0.995*self.prevSpeed + 0.005*speed
 
         if self.obstacle_detected is True and vectors.vector_count != 0:
             # TODO: participants need to decide action on detection of obstacle.
             speed = SPEED_50_PERCENT*0.55
             turn = -self.obs#0.95*self.obs + turn*0.05
             print("obstacle detected") 
-        #While goind down/ after ramp to avoid bouncing of buggs
-        if self.prevSpeed < 0.75 and speed > 0.54 and self.obstacle_detected is False:
-            speed = 0.995*self.prevSpeed + 0.005*speed
         
+        
+        if (self.traffic_status.stop_sign is True):
+            speed = self.prevSpeed*0.9
+            turn = turn*0.7
+            if self.prevSpeed < 0.2:
+                speed = SPEED_MIN
+            print("stop sign detected")
+
         self.speed = speed
         self.turn = turn
     """ Updates instance member with traffic status message received from /traffic_status.
@@ -243,7 +246,6 @@ class LineFollower(Node):
         side_ranges_left.reverse()
         angle2 = 0.0
         for i in range(len(side_ranges_left)):
-            #
             if (side_ranges_left[i] < THRESHOLD_OBSTACLE_HORIZONTAL):
                 #print("LEFT",min(side_ranges_left))
                 self.obstacle_detected = True
@@ -292,17 +294,6 @@ class LineFollower(Node):
                 return
             
         self.ramp_detected = False
-        
-    def pose_callback(self, Message):
-        self.status = [Message.pose.pose.position.x, Message.pose.pose.position.y, 0]
-        x = Message.pose.pose.orientation.x
-        y = Message.pose.pose.orientation.y
-        z = Message.pose.pose.orientation.z
-        w = Message.pose.pose.orientation.w
-        t3 = +2.0 * (w * z + x * y)
-        t4 = +1.0 - 2.0 * (y * y + z * z)
-        yaw_z = np.arctan2(t3, t4)
-        self.status[2] = yaw_z
         
     def MainLoop(self):
         self.prevSpeed = self.speed

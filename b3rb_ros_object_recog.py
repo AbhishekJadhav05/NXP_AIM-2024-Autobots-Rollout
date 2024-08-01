@@ -61,7 +61,7 @@ class ObjectRecognizer(Node):
 		results = model.predict(source=image, imgsz=640, conf=0.25)
 		for result in results:
 			if result.boxes:  
-				if result.boxes.conf.tolist()[0] > 0.9:
+				if result.boxes.conf.tolist()[0] > 0.96:
 					print(result.boxes.conf.tolist()[0])
 					traffic_status.stop_sign = True
 				else:
