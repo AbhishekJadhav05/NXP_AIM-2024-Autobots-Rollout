@@ -112,7 +112,7 @@ class LineFollower(Node):
         if (vectors.vector_count == 1):  # curve.
             # Calculate the magnitude of the x-component of the vector.
             deviation = vectors.vector_1[1].x - vectors.vector_1[0].x
-            p_turn = deviation * 2 / vectors.image_width
+            p_turn = deviation / half_width
             speed = SPEED_75_PERCENT * (np.abs(math.cos(turn))**(1/2))
             #speed = speed * (np.abs(math.cos(turn))**(1/2))
             #print("ONE (1) Vector formed")
@@ -123,7 +123,7 @@ class LineFollower(Node):
             middle_x_right = (vectors.vector_2[0].x + vectors.vector_2[1].x) / 2
             middle_x = (middle_x_left + middle_x_right) / 2
             deviation = half_width - middle_x
-            p_turn = deviation * 2 / half_width
+            p_turn = deviation *2 / half_width
             speed = speed * (np.abs(math.cos(turn))**(1/4))
             #speed = SPEED_MAX
             #print("TWO (2) Vectors formed.")
@@ -131,9 +131,24 @@ class LineFollower(Node):
         deviation_magnitude = abs(p_turn)
         kP = kP_base * (1 + deviation_magnitude)
         kD = kD_base * (1 + deviation_magnitude)
-        derivative_turn = (turn - self.prevTurn)
+        derivative_turn = (p_turn - self.prevTurn)
 
         turn = kP * p_turn + kD * derivative_turn
+
+        if (self.traffic_status.stop_sign is True):
+            self.speed = self.prevSpeed*0.9
+            self.turn = turn*0.7
+            if self.prevSpeed < 0.2:
+                self.speed = SPEED_MIN
+            print("stop sign detected")
+            return
+
+        if self.obstacle_detected is True and vectors.vector_count != 0:
+            # TODO: participants need to decide action on detection of obstacle.
+            speed = SPEED_50_PERCENT*0.55
+            turn = -0.95*self.obs + turn*0.05
+            #print("obstacle detected") 
+
 
         if (vectors.vector_count == 0):  # none.
             speed = SPEED_25_PERCENT
@@ -141,7 +156,7 @@ class LineFollower(Node):
             turn = self.prevTurn*0.9
             #print("ZERO (0) Vectors formed")
 
-        if self.ramp_detected is True:
+        if self.ramp_detected is True and self.obstacle_detected is False:
             # TODO: participants need to decide action on detection of ramp/bridge.
             speed = 0.55
             '''change it to reduce speed close to the ramp'''
@@ -150,19 +165,8 @@ class LineFollower(Node):
         if self.prevSpeed < 0.75 and speed > 0.54 and self.obstacle_detected is False:
             speed = 0.995*self.prevSpeed + 0.005*speed
 
-        if self.obstacle_detected is True and vectors.vector_count != 0:
-            # TODO: participants need to decide action on detection of obstacle.
-            speed = SPEED_50_PERCENT*0.55
-            turn = -0.95*self.obs + turn*0.05
-            #print("obstacle detected") 
-        #While goind down/ after ramp to avoid bouncing of buggs
         
-        if (self.traffic_status.stop_sign is True):
-            speed = self.prevSpeed*0.9
-            turn = turn*0.7
-            if self.prevSpeed < 0.2:
-                speed = SPEED_MIN
-            print("stop sign detected")
+        #While goind down/ after ramp to avoid bouncing of buggs
         
         self.speed = speed
         self.turn = turn
@@ -216,35 +220,34 @@ class LineFollower(Node):
                 angleAvoidance = angleFront
                 angleSafe = np.arctan(SAFE_DISTANCE_STRAIGHT/front_ranges[i])
                 angleFront = angleAvoidance + np.abs(angleSafe)*np.sign(angleAvoidance) 
-                '''+ np.abs(angleSafe)'''
-                self.obs = angleFront
-                angles.append(angleFront)
+                #self.obs = angleFront
+                #angles.append(angleFront)
                 print('Front')
                 break
             angleFront += message.angle_increment
 
         
-        # angleFront2 = theta - PI / 2# - theta
-        # front_ranges.reverse()
-        # for i in range(len(front_ranges)):
-        #     #
-        #     if (front_ranges[i] < THRESHOLD_OBSTACLE_VERTICAL):
-        #         #print("FRONT",min(front_ranges))
-        #         self.obstacle_detected = True
-        #         angleAvoidance = angleFront2
-        #         angleSafe = np.arctan(SAFE_DISTANCE_STRAIGHT/front_ranges[i])
-        #         angleFront2 = angleAvoidance + np.abs(angleSafe)*np.sign(angleAvoidance) 
-        #         #print(angle1, angle12)
-        #         #angle one always has the opp sign as angle 12
-        #         angleFront = (angleFront - angleFront2)/2
-        #         self.obs = angleFront
-        #         #print(angle1)
 
-        #         '''+ np.abs(angleSafe)'''
-        #         # self.obs = angle12
-        #         angles.append(angleFront)
-        #         break
-        #     angleFront2 += message.angle_increment
+
+        angleFront2 = theta - PI / 2 #- theta
+        front_ranges.reverse()
+        for i in range(len(front_ranges)):
+            #
+            if (front_ranges[i] < THRESHOLD_OBSTACLE_VERTICAL):
+                #print("FRONT",min(front_ranges))
+                self.obstacle_detected = True
+                angleAvoidance = angleFront2
+                angleSafe = np.arctan(SAFE_DISTANCE_STRAIGHT/front_ranges[i])
+                angleFront2 = angleAvoidance + np.abs(angleSafe)*np.sign(angleAvoidance) 
+                angleFront2 = PI - 2*theta - angleFront2
+                #print(angle1, angle12)
+                #angle one always has the opp sign as angle 12
+                angleFront = (angleFront + angleFront2)/2
+                self.obs = angleFront
+                #print(angle1)
+                angles.append(angleFront)
+                break
+            angleFront2 += message.angle_increment
 
         close = []
         # process side Left
