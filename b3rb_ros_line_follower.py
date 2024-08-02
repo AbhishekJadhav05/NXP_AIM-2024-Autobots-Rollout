@@ -27,7 +27,7 @@ SPEED_50_PERCENT = SPEED_25_PERCENT * 2
 SPEED_75_PERCENT = SPEED_25_PERCENT * 3
 
 THRESHOLD_OBSTACLE_VERTICAL = 0.55
-THRESHOLD_OBSTACLE_HORIZONTAL = 0.3
+THRESHOLD_OBSTACLE_HORIZONTAL = 0.35
 THRESHOLD_RAMP_MIN = 0.9#0.7
 THRESHOLD_RAMP_MAX = 1#1.1
 
@@ -218,33 +218,34 @@ class LineFollower(Node):
                 self.obstacle_detected = True
                 angleAvoidance = angle1
                 angleSafe = np.arctan(SAFE_DISTANCE/front_ranges[i])
-                angle1 = angleAvoidance + np.abs(angleSafe)*np.sign(angleAvoidance) 
+                angle1 = angleAvoidance #+ np.abs(angleSafe)*np.sign(angleAvoidance) 
                 self.obs = angle1
-                #angles.append(angle1)
+                angles.append(angle1)
+                print('front')
                 break
             angle1 += message.angle_increment
 
-        angle12 = theta - PI / 2
-        front_ranges.reverse()
-        for i in range(len(front_ranges)):
-            #
-            if (front_ranges[i] < THRESHOLD_OBSTACLE_VERTICAL):
-                #print("FRONT",min(front_ranges))
-                self.obstacle_detected = True
-                angleAvoidance = angle12
-                angleSafe = np.arctan(1/front_ranges[i])
-                angle12 = angleAvoidance + np.abs(angleSafe)*np.sign(angleAvoidance) 
-                angle12 = PI - 2*theta - angle12 + angleSafe
+        # angle12 = theta - PI / 2
+        # front_ranges.reverse()
+        # for i in range(len(front_ranges)):
+        #     #
+        #     if (front_ranges[i] < THRESHOLD_OBSTACLE_VERTICAL):
+        #         #print("FRONT",min(front_ranges))
+        #         self.obstacle_detected = True
+        #         angleAvoidance = angle12
+        #         angleSafe = np.arctan(1/front_ranges[i])
+        #         angle12 = angleAvoidance + np.abs(angleSafe)*np.sign(angleAvoidance) 
+        #         angle12 = PI - 2*theta - angle12 + angleSafe
 
-                #if np.sign(angle1) == np.sign(angle12):
-                angle1 = angle1*0.5 + angle12*0.5
-                #else: 
-                #    angle = angle1 + angle12
+        #         if np.sign(angle1) == np.sign(angle12):
+        #             angle1 = angle1*0.5 + angle12*0.5
+        #         else: 
+        #             angle = angle1 + angle12 + np.abs(angleSafe)*np.sign(angleAvoidance)
                     
-                self.obs = angle1
-                angles.append(angle1)
-                break
-            angle12 += message.angle_increment
+        #         self.obs = angle1
+        #         angles.append(angle1)
+        #         break
+        #     angle12 += message.angle_increment
 
         # process side Left
         #side_ranges_left.reverse()
@@ -254,12 +255,13 @@ class LineFollower(Node):
                 #print("LEFT",min(side_ranges_left))
                 self.obstacle_detected = True
                 angleAvoidance = angle2
-                #angleSafe = np.arctan(SAFE_DISTANCE/side_ranges_left[i])
-                angle2 = angleAvoidance #+ np.abs(angleSafe)*np.sign(angleAvoidance)
+                angleSafe = np.arctan(SAFE_DISTANCE/side_ranges_left[i])
+                angle2 = angleAvoidance + np.abs(angleSafe)*np.sign(angleAvoidance)
                 angle2 = theta - angle2
-                self.obs = angle2
+                self.obs = angle2 #+ np.abs(angleSafe)*np.sign(angleAvoidance)
                 angles.append(angle2)
                 close[0] = side_ranges_left[i]
+                print('left')
                 break
             angle2 += message.angle_increment
         
@@ -272,20 +274,30 @@ class LineFollower(Node):
                 #print("RIGHT",min(side_ranges_right))
                 self.obstacle_detected = True
                 angleAvoidance = angle3
-                #angleSafe = np.arctan(SAFE_DISTANCE/side_ranges_right[i])
-                angle3 = angleAvoidance #+ np.abs(angleSafe)*np.sign(angleAvoidance)
+                angleSafe = np.arctan(SAFE_DISTANCE/side_ranges_right[i])
+                angle3 = angleAvoidance + np.abs(angleSafe)*np.sign(angleAvoidance)
                 angle3 = - theta + angle3
-                self.obs = angle3
+                self.obs = angle3 #+ np.abs(angleSafe)*np.sign(angleAvoidance)
                 angles.append(angle3)
                 close[1] = side_ranges_right[i]
+                print('right')
                 break
             angle3 += message.angle_increment
         if len(angles) == 3:
-            self.obs = np.dot(angles, [1,1,1])
+            print('3')
+            if(close[0] < close[1]):
+                angleSafe = np.arctan(SAFE_DISTANCE/close[1])
+                angle = angles[1]*0.6 + angles[2]
+                angle += np.abs(angleSafe)*np.sign(angle)
+            if(close[0] > close[1]):
+                angleSafe = np.arctan(SAFE_DISTANCE/close[0])
+                angle = angles[1] + angles[2]*0.6
+                angle += np.abs(angleSafe)*np.sign(angle)
+            self.obs = angle + angle1*0.7
             return
         if len(angles) == 2 and angles[0] == angle1:
-            self.obs = np.dot(angles, [1,1])
-            print("Case detected")
+            self.obs = np.dot(angles, [0.7,1])
+            print("side w front")
             return
         if len(angles) == 2:
             #self.obs = np.dot(angles, [1,1])
@@ -297,7 +309,10 @@ class LineFollower(Node):
                 angleSafe = np.arctan(SAFE_DISTANCE/close[0])
                 angle = np.dot(angles, [1,0.6])
                 self.obs = angle + np.abs(angleSafe)*np.sign(angle)
+                print("2 sides")
+
         if len(angles) == 1:
+            print('One')
             return
         
         self.obstacle_detected = False
