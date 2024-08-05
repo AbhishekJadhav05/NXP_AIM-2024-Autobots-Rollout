@@ -26,13 +26,13 @@ SPEED_25_PERCENT = SPEED_MAX / 4
 SPEED_50_PERCENT = SPEED_25_PERCENT * 2
 SPEED_75_PERCENT = SPEED_25_PERCENT * 3
 
-THRESHOLD_OBSTACLE_VERTICAL = 0.55
-THRESHOLD_OBSTACLE_HORIZONTAL = 0.35
+THRESHOLD_OBSTACLE_VERTICAL = 0.5
+THRESHOLD_OBSTACLE_HORIZONTAL = 0.3
 THRESHOLD_RAMP_MIN = 0.9 #0.7
 THRESHOLD_RAMP_MAX = 1.1
 
-SAFE_DISTANCE = 0.3
-SAFE_DISTANCE_STRAIGHT = 0.25
+SAFE_DISTANCE = 0.2
+SAFE_DISTANCE_STRAIGHT = 0.2
 #Min - 0.6179950833320618 and Max - 0.9302666783332825
 #Min - 0.4310002624988556 and Max - 1.9826102256774902
 class LineFollower(Node):
@@ -72,7 +72,7 @@ class LineFollower(Node):
         self.traffic_status = TrafficStatus()
         self.obstacle_detected = False
         self.ramp_detected = False
-        self.LoopSetter()
+
     """ Operates the rover in manual mode by publishing on /cerebri/in/joy.
         Args:
             speed: the speed of the car in float. Range = [-1.0, +1.0];
@@ -113,7 +113,7 @@ class LineFollower(Node):
             # Calculate the magnitude of the x-component of the vector.
             deviation = vectors.vector_1[1].x - vectors.vector_1[0].x
             p_turn = deviation  / half_width
-            speed = SPEED_75_PERCENT * (np.abs(math.cos(turn))**(1/2))
+            speed = SPEED_75_PERCENT * (np.abs(math.cos(p_turn))**(1/2))
             #speed = speed * (np.abs(math.cos(turn))**(1/2))
             #print("ONE (1) Vector formed")
 
@@ -124,16 +124,16 @@ class LineFollower(Node):
             middle_x = (middle_x_left + middle_x_right) / 2
             deviation = half_width - middle_x
             p_turn = deviation  / half_width
-            speed = speed * (np.abs(math.cos(turn))**(1/4))
+            speed = speed * (np.abs(math.cos(p_turn))**(1/4))
             #speed = SPEED_MAX
             #print("TWO (2) Vectors formed.")
         
         deviation_magnitude = abs(p_turn)
-        kP = kP_base * (1 + deviation_magnitude)
-        kD = kD_base * (1 + deviation_magnitude)
+        #kP = kP_base * (1 + deviation_magnitude)
+        #kD = kD_base * (1 + deviation_magnitude)
         derivative_turn = (turn - self.prevTurn)
 
-        turn = kP * p_turn + kD * derivative_turn
+        turn = kP_base * p_turn + kD_base * derivative_turn
 
         if (vectors.vector_count == 0):  # none.
             speed = SPEED_25_PERCENT
@@ -164,8 +164,11 @@ class LineFollower(Node):
                 speed = SPEED_MIN
             print("stop sign detected")
         
-        self.speed = speed
-        self.turn = turn
+        print(f"Turn {turn} and Speed {speed}")
+        self.prevSpeed = speed
+        self.prevTurn = turn
+        self.rover_move_manual_mode(speed, turn)
+
     """ Updates instance member with traffic status message received from /traffic_status.
         Args:
             message: "~/cognipilot/cranium/src/synapse_msgs/msg/TrafficStatus.msg"
@@ -220,6 +223,7 @@ class LineFollower(Node):
                 self.obs = angleFront
                 angles.append(angleFront)
                 print('Front')
+                print(angleFront)
                 break
             angleFront += message.angle_increment
 
@@ -261,7 +265,9 @@ class LineFollower(Node):
                 self.obs = angleLeft
                 angles.append(angleLeft)
                 close.append(side_ranges_left[i])
+                
                 print('Left')
+                print(angleLeft)
                 break
             angleLeft += message.angle_increment
         
@@ -280,31 +286,42 @@ class LineFollower(Node):
                 angles.append(angleRight)
                 close.append(side_ranges_right[i])
                 print('Right')
+                print(angleRight)
                 break
             angleRight += message.angle_increment
         
         if len(angles) == 3:
             print('3')
             if close[0] < close[1]:
-                angle = 0.9*angles[1] + angles[2]
+                angle = angles[1] + 0.9*angles[2]
             else:
-                angle = angles[1] + angles[2]*0.9
-            self.obs = angles[0]*0.5 + angle*0.5
+                angle = 0.9*angles[1] + angles[2]
+            
+            if angle*angles[0] > 0:
+                self.obs = angles[0]*0.3 + angle*0.7
+            else:
+                self.obs = angles[0]*0.5 + angle
+            print(f"final {self.obs}")
             return
         
         if len(angles) == 2 and angles[0] == angleFront:
             print('2 w front')
-            self.obs = np.dot(angles, [1,1])
+            if angles[1]*angles[0] > 0:
+                self.obs = angles[0]*0.3 + angles[1]*0.7
+            else:
+                self.obs = angles[0]*0.5 + angles[1]
+            print(f"final {self.obs}")
             return
         
         elif len(angles) == 2:
             print('2 sides')
             if close[0] < close[1]:
                 angleSafe = np.arctan(SAFE_DISTANCE/side_ranges_left[i])
-                self.obs = np.dot(angles, [1,1]) + np.abs(angleSafe)*np.sign(angleAvoidance)
+                self.obs = np.dot(angles, [1,0.9]) + np.abs(angleSafe)*np.sign(angleAvoidance)
             else:
                 angleSafe = np.arctan(SAFE_DISTANCE/side_ranges_right[i])
-                self.obs = np.dot(angles, [1,1]) + np.abs(angleSafe)*np.sign(angleAvoidance)
+                self.obs = np.dot(angles, [0.9,1]) + np.abs(angleSafe)*np.sign(angleAvoidance)
+            print(f"final {self.obs}")
             return
         if len(angles) == 1:
             print('1')
@@ -318,27 +335,6 @@ class LineFollower(Node):
                 return
             
         self.ramp_detected = False
-        
-        
-    def MainLoop(self):
-        self.prevSpeed = self.speed
-        self.prevTurn = self.turn
-        self.rover_move_manual_mode(self.speed, self.turn)
-
-    def LoopSetter(self):
-        """
-        This function is called when the node is started. It runs the main loop at a fixed rate.
-        """
-        
-        timerPeriod = 1/30
-        
-        try:
-            self.timer = self.create_timer(timerPeriod, self.MainLoop)
-
-        except KeyboardInterrupt:
-            print("ROS Interrupt Exception")
-            
-            exit(1)
 
 def main(args=None):
     rclpy.init(args=args)
