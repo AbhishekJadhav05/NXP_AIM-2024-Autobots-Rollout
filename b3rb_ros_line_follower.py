@@ -26,13 +26,13 @@ SPEED_25_PERCENT = SPEED_MAX / 4
 SPEED_50_PERCENT = SPEED_25_PERCENT * 2
 SPEED_75_PERCENT = SPEED_25_PERCENT * 3
 
-THRESHOLD_OBSTACLE_VERTICAL = 0.75
-THRESHOLD_OBSTACLE_HORIZONTAL = 0.4
+THRESHOLD_OBSTACLE_VERTICAL = 0.8
+THRESHOLD_OBSTACLE_HORIZONTAL = 0.45
 THRESHOLD_RAMP_MIN = 0.9 #0.7
 THRESHOLD_RAMP_MAX = 1.1
 
-SAFE_DISTANCE = 0.25
-SAFE_DISTANCE_STRAIGHT = 0.25
+SAFE_DISTANCE = 0.005
+SAFE_DISTANCE_STRAIGHT = 0.005
 #Min - 0.6179950833320618 and Max - 0.9302666783332825
 #Min - 0.4310002624988556 and Max - 1.9826102256774902
 class LineFollower(Node):
@@ -105,8 +105,8 @@ class LineFollower(Node):
         half_width = vectors.image_width / 2
         
         p_turn = 0.0
-        kP_base = 0.8
-        kD_base = 0.35
+        kP_base = 0.7
+        kD_base = 0.4
         
         # NOTE: participants may improve algorithm for line follower.
         
@@ -135,10 +135,10 @@ class LineFollower(Node):
             #speed = SPEED_MAX
             #print("TWO (2) Vectors formed.")
 
-        if self.obstacle_detected is True and vectors.vector_count != 0:
+            if self.obstacle_detected is True:
             # TODO: participants need to decide action on detection of obstacle.
-            speed = 0.75
-            p_turn = -0.95*self.obs + p_turn*0.05
+                speed = 0.75
+                p_turn = -0.9*self.obs + p_turn*0.1
             # if self.closest >= 0.6:
             # # Maintain cruising speed
             #     speed = SPEED_50_PERCENT
@@ -170,6 +170,7 @@ class LineFollower(Node):
 
         turn = kP * p_turn + kD * derivative_turn
         
+
         #make it less sensitive - can define new variables to make it look clean
         #speed = (kP) * speed + kD * (speed - self.prevSpeed)
         #speed = abs(speed)
@@ -267,6 +268,7 @@ class LineFollower(Node):
                 if angleFront*angleFront2>0:
                     if angleFront > 0:
                         angleFront = angleFront2
+                        angleSafe = angleSafe = np.arctan(SAFE_DISTANCE_STRAIGHT/front_ranges[i])
                         #angleFront = min(angleFront, angleFront2)
                         #angleFront = (PI/2 - theta) - angleFront
                     else:
@@ -275,7 +277,7 @@ class LineFollower(Node):
                         #angleFront = -(PI/2 - theta) + angleFront
                 else:
                     angleFront += angleFront2
-                angleFront += + np.abs(angleSafe)*np.sign(angleFront)
+                #angleFront += np.abs(angleSafe)*np.sign(angleFront)
                 print(angleFront)
                 self.obs = angleFront
                 angles.append(angleFront)
@@ -294,8 +296,8 @@ class LineFollower(Node):
                 #print("LEFT",min(side_ranges_left))
                 self.obstacle_detected = True
                 angleSafe = np.arctan(SAFE_DISTANCE/side_ranges_left[i])
-                angleLeft += np.abs(angleSafe)*np.sign(angleLeft)
                 angleLeft = theta - angleLeft
+                #angleLeft += np.abs(angleSafe)*np.sign(angleLeft)
                 self.obs = angleLeft
                 angles.append(angleLeft)
                 close.append(side_ranges_left[i])
@@ -314,8 +316,8 @@ class LineFollower(Node):
                 #print("RIGHT",min(side_ranges_right))
                 self.obstacle_detected = True
                 angleSafe = np.arctan(SAFE_DISTANCE/side_ranges_right[i])
-                angleRight += np.abs(angleSafe)*np.sign(angleRight)
                 angleRight = - theta + angleRight
+                #angleRight += np.abs(angleSafe)*np.sign(angleRight)
                 self.obs = angleRight
                 angles.append(angleRight)
                 close.append(side_ranges_right[i])
@@ -334,7 +336,7 @@ class LineFollower(Node):
                 angle = 0.9*angles[1] + angles[2]
 
             if angle*angles[0]>0:
-                self.obs = angles[0] + angle
+                self.obs = angles[0]*0.3 + angle*0.7
             else:
                 self.obs = angles[0] + angle
             print(f"Final {self.obs}")
@@ -343,9 +345,9 @@ class LineFollower(Node):
         if len(angles) == 2 and angles[0] == angleFront:
             print('side w front')
             if angles[0]*angles[1]>0:
-                self.obs = np.dot(angles, [1,1])
+                self.obs = np.dot(angles, [0.5,0.5])
             else:
-                self.obs = angles[0] + angles[1]
+                self.obs = angles[0]*0.9 + angles[1]
             print(f"Final {self.obs}")
             return
         
@@ -354,11 +356,11 @@ class LineFollower(Node):
             if close[0] < close[1]:
                 angleSafe = np.arctan(SAFE_DISTANCE/close[0])
                 self.obs = np.dot(angles, [1,0.9])
-                self.obs += np.abs(angleSafe)*np.sign(self.obs)
+                #self.obs += np.abs(angleSafe)*np.sign(self.obs)
             else:
                 angleSafe = np.arctan(SAFE_DISTANCE/close[1])
                 self.obs = np.dot(angles, [0.9, 1]) 
-                self.obs += np.abs(angleSafe)*np.sign(self.obs)
+                #self.obs += np.abs(angleSafe)*np.sign(self.obs)
             print(f"Final {self.obs}")
         
         if len(angles) == 1:

@@ -17,7 +17,7 @@ import logging
 logging.getLogger('ultralytics').setLevel(logging.CRITICAL)
 
 #path = os.path.join(os.path.dirname(__file__),'best(1).pt')
-path = '/home/gitaansh/cognipilot/cranium/src/b3rb_ros_line_follower/b3rb_ros_line_follower/best(3).pt'
+path = '/home/gitaansh/cognipilot/cranium/src/b3rb_ros_line_follower/b3rb_ros_line_follower/best(1).pt'
 model = YOLO(path)
 
 class ObjectRecognizer(Node):
@@ -61,7 +61,9 @@ class ObjectRecognizer(Node):
 		results = model.predict(source=image, imgsz=640, conf=0.25)
 		for result in results:
 			if result.boxes:  
+				p = 100*(result.boxes.xywh[0][2]*result.boxes.xywh[0][3])/(result.boxes.orig_shape[0]*result.boxes.orig_shape[1])
 				if result.boxes.conf.tolist()[0] > 0.96:
+					print(p)
 					print(result.boxes.conf.tolist()[0])
 					traffic_status.stop_sign = True
 				else:
