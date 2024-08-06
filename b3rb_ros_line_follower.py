@@ -31,8 +31,8 @@ THRESHOLD_OBSTACLE_HORIZONTAL = 0.45
 THRESHOLD_RAMP_MIN = 0.9 #0.7
 THRESHOLD_RAMP_MAX = 1.1
 
-SAFE_DISTANCE = 0.005
-SAFE_DISTANCE_STRAIGHT = 0.005
+SAFE_DISTANCE = 0.15
+SAFE_DISTANCE_STRAIGHT = 0.15
 #Min - 0.6179950833320618 and Max - 0.9302666783332825
 #Min - 0.4310002624988556 and Max - 1.9826102256774902
 class LineFollower(Node):
@@ -135,10 +135,7 @@ class LineFollower(Node):
             #speed = SPEED_MAX
             #print("TWO (2) Vectors formed.")
 
-            if self.obstacle_detected is True:
-            # TODO: participants need to decide action on detection of obstacle.
-                speed = 0.75
-                p_turn = -0.9*self.obs + p_turn*0.1
+            
             # if self.closest >= 0.6:
             # # Maintain cruising speed
             #     speed = SPEED_50_PERCENT
@@ -170,6 +167,10 @@ class LineFollower(Node):
 
         turn = kP * p_turn + kD * derivative_turn
         
+        if self.obstacle_detected is True:
+            # TODO: participants need to decide action on detection of obstacle.
+                speed = 0.55
+                turn = -0.95*self.obs + turn*0.05
 
         #make it less sensitive - can define new variables to make it look clean
         #speed = (kP) * speed + kD * (speed - self.prevSpeed)
@@ -279,10 +280,10 @@ class LineFollower(Node):
                     angleFront += angleFront2
                 #angleFront += np.abs(angleSafe)*np.sign(angleFront)
                 print(angleFront)
-                self.obs = angleFront
-                angles.append(angleFront)
-                if self.closest > front_ranges[i]:
-                    self.closest = front_ranges[i]
+                #self.obs = angleFront
+                #angles.append(angleFront)
+                # if self.closest > front_ranges[i]:
+                #     self.closest = front_ranges[i]
                 break
             angleFront2 -= message.angle_increment
 
@@ -290,43 +291,71 @@ class LineFollower(Node):
         close = []
         # process side Left
         #side_ranges_left.reverse()
-        angleLeft = 0.0
-        for i in range(len(side_ranges_left)):
-            if (side_ranges_left[i] < THRESHOLD_OBSTACLE_HORIZONTAL):
-                #print("LEFT",min(side_ranges_left))
-                self.obstacle_detected = True
-                angleSafe = np.arctan(SAFE_DISTANCE/side_ranges_left[i])
-                angleLeft = theta - angleLeft
-                #angleLeft += np.abs(angleSafe)*np.sign(angleLeft)
-                self.obs = angleLeft
-                angles.append(angleLeft)
-                close.append(side_ranges_left[i])
-                print('Left')
-                print(angleLeft)
-                if self.closest > side_ranges_left[i]:
-                    self.closest = side_ranges_left[i]
-                break
-            angleLeft += message.angle_increment
+        # angleLeft = 0.0
+        # for i in range(len(side_ranges_left)):
+        #     if (side_ranges_left[i] < THRESHOLD_OBSTACLE_HORIZONTAL):
+        #         #print("LEFT",min(side_ranges_left))
+        #         self.obstacle_detected = True
+        #         angleSafe = np.arctan(SAFE_DISTANCE/side_ranges_left[i])
+        #         angleLeft = theta - angleLeft
+        #         #angleLeft += np.abs(angleSafe)*np.sign(angleLeft)
+        #         self.obs = angleLeft
+        #         angles.append(angleLeft)
+        #         close.append(side_ranges_left[i])
+        #         print('Left')
+        #         print(angleLeft)
+        #         if self.closest > side_ranges_left[i]:
+        #             self.closest = side_ranges_left[i]
+        #         break
+        #     angleLeft += message.angle_increment
         
+        if min(front_ranges) < THRESHOLD_OBSTACLE_HORIZONTAL:
+            self.obstacle_detected = True
+            angleFront = np.abs(np.arctan(SAFE_DISTANCE/min(front_ranges))) * np.sign(angleFront)
+            self.obs = angleFront
+            angles.append(angleFront)
+            if self.closest > min(front_ranges):
+                self.closest = min(front_ranges)
+
+        if min(side_ranges_left) < THRESHOLD_OBSTACLE_HORIZONTAL:
+            self.obstacle_detected = True
+            angleLeft = np.arctan(SAFE_DISTANCE/min(side_ranges_left))
+            angleLeft = np.abs(angleLeft)
+            self.obs = angleLeft
+            close.append(min(side_ranges_left))
+            if self.closest > min(side_ranges_left):
+                    self.closest = min(side_ranges_left)
+            angles.append(angleLeft)
+
+        if min(side_ranges_right) < THRESHOLD_OBSTACLE_HORIZONTAL:
+            self.obstacle_detected = True
+            angleRight = np.arctan(SAFE_DISTANCE/min(side_ranges_right))
+            angleRight = -1*np.abs(angleRight)
+            self.obs = angleRight
+            close.append(min(side_ranges_right))
+            if self.closest > min(side_ranges_right):
+                    self.closest = min(side_ranges_right)
+            angles.append(angleRight)
+
         # process side Right
-        angleRight = 0.0
-        side_ranges_right.reverse()
-        for i in range(len(side_ranges_right)):
-            if (side_ranges_right[i] < THRESHOLD_OBSTACLE_HORIZONTAL):
-                #print("RIGHT",min(side_ranges_right))
-                self.obstacle_detected = True
-                angleSafe = np.arctan(SAFE_DISTANCE/side_ranges_right[i])
-                angleRight = - theta + angleRight
-                #angleRight += np.abs(angleSafe)*np.sign(angleRight)
-                self.obs = angleRight
-                angles.append(angleRight)
-                close.append(side_ranges_right[i])
-                print('Right')
-                print(angleRight)
-                if self.closest > side_ranges_right[i]:
-                    self.closest = side_ranges_right[i]
-                break
-            angleRight += message.angle_increment
+        # angleRight = 0.0
+        # side_ranges_right.reverse()
+        # for i in range(len(side_ranges_right)):
+        #     if (side_ranges_right[i] < THRESHOLD_OBSTACLE_HORIZONTAL):
+        #         #print("RIGHT",min(side_ranges_right))
+        #         self.obstacle_detected = True
+        #         angleSafe = np.arctan(SAFE_DISTANCE/side_ranges_right[i])
+        #         angleRight = - theta + angleRight
+        #         #angleRight += np.abs(angleSafe)*np.sign(angleRight)
+        #         self.obs = angleRight
+        #         angles.append(angleRight)
+        #         close.append(side_ranges_right[i])
+        #         print('Right')
+        #         print(angleRight)
+        #         if self.closest > side_ranges_right[i]:
+        #             self.closest = side_ranges_right[i]
+        #         break
+        #     angleRight += message.angle_increment
         
         if len(angles) == 3:
             print('3')
@@ -345,7 +374,7 @@ class LineFollower(Node):
         if len(angles) == 2 and angles[0] == angleFront:
             print('side w front')
             if angles[0]*angles[1]>0:
-                self.obs = np.dot(angles, [0.5,0.5])
+                self.obs = np.dot(angles, [0.4,0.6])
             else:
                 self.obs = angles[0]*0.9 + angles[1]
             print(f"Final {self.obs}")
