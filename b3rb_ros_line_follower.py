@@ -26,13 +26,13 @@ SPEED_25_PERCENT = SPEED_MAX / 4
 SPEED_50_PERCENT = SPEED_25_PERCENT * 2
 SPEED_75_PERCENT = SPEED_25_PERCENT * 3
 
-THRESHOLD_OBSTACLE_VERTICAL = 0.8
-THRESHOLD_OBSTACLE_HORIZONTAL = 0.45
+THRESHOLD_OBSTACLE_VERTICAL = 0.75
+THRESHOLD_OBSTACLE_HORIZONTAL = 0.5
 THRESHOLD_RAMP_MIN = 0.9 #0.7
 THRESHOLD_RAMP_MAX = 1.1
 
-SAFE_DISTANCE = 0.15
-SAFE_DISTANCE_STRAIGHT = 0.15
+SAFE_DISTANCE = 0.2
+SAFE_DISTANCE_STRAIGHT = 0.2
 #Min - 0.6179950833320618 and Max - 0.9302666783332825
 #Min - 0.4310002624988556 and Max - 1.9826102256774902
 class LineFollower(Node):
@@ -169,7 +169,7 @@ class LineFollower(Node):
         
         if self.obstacle_detected is True:
             # TODO: participants need to decide action on detection of obstacle.
-                speed = 0.55
+                speed = 0.5
                 turn = -0.95*self.obs + turn*0.05
 
         #make it less sensitive - can define new variables to make it look clean
@@ -374,9 +374,9 @@ class LineFollower(Node):
         if len(angles) == 2 and angles[0] == angleFront:
             print('side w front')
             if angles[0]*angles[1]>0:
-                self.obs = np.dot(angles, [0.4,0.6])
+                self.obs = np.dot(angles, [0.5,0.5])
             else:
-                self.obs = angles[0]*0.9 + angles[1]
+                self.obs = angles[0] + angles[1]
             print(f"Final {self.obs}")
             return
         
