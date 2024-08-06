@@ -31,8 +31,8 @@ THRESHOLD_OBSTACLE_HORIZONTAL = 0.5
 THRESHOLD_RAMP_MIN = 0.9 #0.7
 THRESHOLD_RAMP_MAX = 1.1
 
-SAFE_DISTANCE = 0.11
-SAFE_DISTANCE_STRAIGHT = 0.11
+SAFE_DISTANCE = 0.15
+SAFE_DISTANCE_STRAIGHT = 0.15
 #Min - 0.6179950833320618 and Max - 0.9302666783332825
 #Min - 0.4310002624988556 and Max - 1.9826102256774902
 class LineFollower(Node):
@@ -106,13 +106,12 @@ class LineFollower(Node):
         
         p_turn = 0.0
         kP_base = 0.7
-        kD_base = 0.4
+        kD_base = 0.45
         
         # NOTE: participants may improve algorithm for line follower.
         
         if (vectors.vector_count == 0):  # none.
             speed = SPEED_25_PERCENT
-
             p_turn = self.prevTurn*0.9
 
 
@@ -135,6 +134,10 @@ class LineFollower(Node):
             #speed = SPEED_MAX
             #print("TWO (2) Vectors formed.")
 
+        if self.obstacle_detected is True:
+            # TODO: participants need to decide action on detection of obstacle.
+            speed = 0.45
+            p_turn = -0.9*self.obs + p_turn*0.1            
             
             # if self.closest >= 0.6:
             # # Maintain cruising speed
@@ -167,10 +170,6 @@ class LineFollower(Node):
 
         turn = kP * p_turn + kD * derivative_turn
         
-        if self.obstacle_detected is True:
-            # TODO: participants need to decide action on detection of obstacle.
-                speed = 0.5
-                turn = -0.95*self.obs + turn*0.05
 
         #make it less sensitive - can define new variables to make it look clean
         #speed = (kP) * speed + kD * (speed - self.prevSpeed)
@@ -191,9 +190,9 @@ class LineFollower(Node):
         #While goind down/ after ramp to avoid bouncing of buggs
         
         if (self.traffic_status.stop_sign is True):
-            speed = self.prevSpeed*0.9
+            speed = self.prevSpeed*0.95
             turn = turn*0.7
-            if self.prevSpeed < 0.2:
+            if self.prevSpeed < 0.15:
                 speed = SPEED_MIN
             print("stop sign detected")
         
@@ -365,36 +364,40 @@ class LineFollower(Node):
         if len(angles) == 3:
             print('3')
             if close[0] < close[1]:
+                angleSafe = np.arctan(0.05/close[0])
                 angle = angles[1] + 0.9*angles[2]
+                angle += np.abs(angleSafe)*np.sign(angle)
             else:
+                angleSafe = np.arctan(0.05/close[1])
                 angle = 0.9*angles[1] + angles[2]
+                angle += np.abs(angleSafe)*np.sign(angle)
 
             if angle*angles[0]>0:
-                self.obs = angles[0]*0.5 + angle*0.5
-            else:
                 self.obs = angles[0] + angle
+            else:
+                self.obs = angles[0]*0.9 + angle
             print(f"Final {self.obs}")
             return
         
         if len(angles) == 2 and angles[0] == angleFront:
             print('side w front')
             if angles[0]*angles[1]>0:
-                self.obs = np.dot(angles, [0.7,0.9])
+                self.obs = np.dot(angles, [1,1])
             else:
-                self.obs = angles[0] + angles[1]
+                self.obs = angles[0]*0.9 + angles[1]
             print(f"Final {self.obs}")
             return
         
         elif len(angles) == 2:
             print('2 sides')
             if close[0] < close[1]:
-                angleSafe = np.arctan(SAFE_DISTANCE/close[0])
+                angleSafe = np.arctan(0.05/close[0])
                 self.obs = np.dot(angles, [1,0.9])
-                #self.obs += np.abs(angleSafe)*np.sign(self.obs)
+                self.obs += np.abs(angleSafe)*np.sign(self.obs)
             else:
-                angleSafe = np.arctan(SAFE_DISTANCE/close[1])
+                angleSafe = np.arctan(0.05/close[1])
                 self.obs = np.dot(angles, [0.9, 1]) 
-                #self.obs += np.abs(angleSafe)*np.sign(self.obs)
+                self.obs += np.abs(angleSafe)*np.sign(self.obs)
             print(f"Final {self.obs}")
         
         if len(angles) == 1:
