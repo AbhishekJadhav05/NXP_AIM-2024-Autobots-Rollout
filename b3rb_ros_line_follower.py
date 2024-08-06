@@ -26,13 +26,13 @@ SPEED_25_PERCENT = SPEED_MAX / 4
 SPEED_50_PERCENT = SPEED_25_PERCENT * 2
 SPEED_75_PERCENT = SPEED_25_PERCENT * 3
 
-THRESHOLD_OBSTACLE_VERTICAL = 0.75
+THRESHOLD_OBSTACLE_VERTICAL = 0.9
 THRESHOLD_OBSTACLE_HORIZONTAL = 0.5
 THRESHOLD_RAMP_MIN = 0.9 #0.7
 THRESHOLD_RAMP_MAX = 1.1
 
-SAFE_DISTANCE = 0.2
-SAFE_DISTANCE_STRAIGHT = 0.2
+SAFE_DISTANCE = 0.125
+SAFE_DISTANCE_STRAIGHT = 0.25
 #Min - 0.6179950833320618 and Max - 0.9302666783332825
 #Min - 0.4310002624988556 and Max - 1.9826102256774902
 class LineFollower(Node):
@@ -247,7 +247,7 @@ class LineFollower(Node):
         # process front ranges.
         angleFront = theta - PI / 2
         for i in range(len(front_ranges)):
-            if (front_ranges[i] < THRESHOLD_OBSTACLE_VERTICAL):
+            if (front_ranges[i] == min(front_ranges)):
                 #print("FRONT",min(front_ranges))
                 self.obstacle_detected = True
                 angleSafe = np.arctan(SAFE_DISTANCE_STRAIGHT/front_ranges[i])
@@ -263,7 +263,7 @@ class LineFollower(Node):
         angleFront2 = PI / 2 - theta
         front_ranges.reverse()
         for i in range(len(front_ranges)):
-            if (front_ranges[i] < THRESHOLD_OBSTACLE_VERTICAL):
+            if (front_ranges[i] == min(front_ranges)):
                 self.obstacle_detected = True
                 print(angleFront2)
                 if angleFront*angleFront2>0:
@@ -365,7 +365,7 @@ class LineFollower(Node):
                 angle = 0.9*angles[1] + angles[2]
 
             if angle*angles[0]>0:
-                self.obs = angles[0]*0.3 + angle*0.7
+                self.obs = angles[0]*0.5 + angle*0.5
             else:
                 self.obs = angles[0] + angle
             print(f"Final {self.obs}")
