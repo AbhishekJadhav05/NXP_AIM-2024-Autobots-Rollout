@@ -145,7 +145,9 @@ class LineFollower(Node):
             else :
                 speed = SPEED_MAX
 
-            if self.angleRight>45 or self.angleRight>45:
+            if self.angleRight>PI/6 or self.angleLeft>PI/6:
+                print("coke can")
+                exit()
                 p_turn = -0.3*self.obs + p_turn*0.7
             
             
@@ -262,13 +264,13 @@ class LineFollower(Node):
                 #print("LEFT",min(side_ranges_left))
                 self.obstacle_detected = True
                 angleSafe = (np.arctan(SAFE_DISTANCE/side_ranges_left[i]))
-                angleLeft += np.abs(angleSafe)*np.sign(angleLeft)
-                angleLeft = theta - angleLeft
-                self.obs = angleLeft
-                angles.append(angleLeft)
+                self.angleLeft += np.abs(angleSafe)*np.sign(self.angleLeft)
+                self.angleLeft = theta - self.angleLeft
+                self.obs = self.angleLeft
+                angles.append(self.angleLeft)
                 close.append(side_ranges_left[i])
                 print('Left')
-                print(angleLeft)
+                print(self.angleLeft)
                 if self.closest > side_ranges_left[i]:
                     self.closest = side_ranges_left[i]
                 break
@@ -282,13 +284,13 @@ class LineFollower(Node):
                 #print("RIGHT",min(side_ranges_right))
                 self.obstacle_detected = True
                 angleSafe = (np.arctan(SAFE_DISTANCE/side_ranges_right[i]))
-                angleRight += np.abs(angleSafe)*np.sign(angleRight)
-                angleRight = - theta + angleRight
-                self.obs = angleRight
-                angles.append(angleRight)
+                self.angleRight += np.abs(angleSafe)*np.sign(self.angleRight)
+                self.angleRight = - theta + self.angleRight
+                self.obs = self.angleRight
+                angles.append(self.angleRight)
                 close.append(side_ranges_right[i])
                 print('Right')
-                print(angleRight)
+                print(self.angleRight)
                 if self.closest > side_ranges_right[i]:
                     self.closest = side_ranges_right[i]
                 break
