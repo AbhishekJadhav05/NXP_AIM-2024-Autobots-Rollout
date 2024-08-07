@@ -21,7 +21,7 @@ RIGHT_TURN = -1.0
 TURN_MIN = 0.0
 TURN_MAX = 1.0
 SPEED_MIN = 0.0
-SPEED_MAX = 1.6
+SPEED_MAX = 2.15
 SPEED_25_PERCENT = SPEED_MAX / 4
 SPEED_50_PERCENT = SPEED_25_PERCENT * 2
 SPEED_75_PERCENT = SPEED_25_PERCENT * 3
@@ -147,13 +147,17 @@ class LineFollower(Node):
             '''change it to reduce speed close to the ramp'''
             print("ramp/bridge detected")
 
-        if self.prevSpeed < 0.85 and speed > 0.54 and self.obstacle_detected is False:
+        if self.prevSpeed < 0.9 and speed > 0.54 and self.obstacle_detected is False:
             speed = 0.997*self.prevSpeed + 0.003*speed
 
         if self.obstacle_detected is True:
             # TODO: participants need to decide action on detection of obstacle.
             speed = 0.45
-            turn = -0.75*self.obs + turn*0.25
+            if self.obs is None:
+                turn = -0.3*self.obs + 0.7*turn
+            else:
+                turn = -0.75*self.obs + turn*0.25
+            
             #print("obstacle detected") 
         #While goind down/ after ramp to avoid bouncing of buggs
         
@@ -282,6 +286,11 @@ class LineFollower(Node):
                 break
             angleRight += message.angle_increment
         
+        if angleLeft == 0 and angleRight == 0 and angleFront < 0.09:
+            self.obs = None
+            return
+
+
         if len(angles) == 3:
             print('3')
             if close[0] < close[1]:

@@ -69,7 +69,7 @@ class ObjectRecognizer(Node):
 					height = y2 - y1
 					areas.append(width*height)
 				print(areas)
-				if result.boxes.conf.tolist()[0] > 0.96 and max(areas) > 400:
+				if result.boxes.conf.tolist()[0] > 0.96 and max(areas) > 10000:
 					print(result.boxes.conf.tolist()[0])
 					traffic_status.stop_sign = True
 		
