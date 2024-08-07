@@ -21,18 +21,18 @@ RIGHT_TURN = -1.0
 TURN_MIN = 0.0
 TURN_MAX = 1.0
 SPEED_MIN = 0.0
-SPEED_MAX = 1.4
+SPEED_MAX = 1.65
 SPEED_25_PERCENT = SPEED_MAX / 4
 SPEED_50_PERCENT = SPEED_25_PERCENT * 2
 SPEED_75_PERCENT = SPEED_25_PERCENT * 3
 
-THRESHOLD_OBSTACLE_VERTICAL = 0.9
-THRESHOLD_OBSTACLE_HORIZONTAL = 0.5
+THRESHOLD_OBSTACLE_VERTICAL = 0.8
+THRESHOLD_OBSTACLE_HORIZONTAL = 0.45
 THRESHOLD_RAMP_MIN = 0.9 #0.7
 THRESHOLD_RAMP_MAX = 1.1
 
-SAFE_DISTANCE = 0.15
-SAFE_DISTANCE_STRAIGHT = 0.15
+SAFE_DISTANCE = 0.2#0.175
+SAFE_DISTANCE_STRAIGHT = 0.2#0.175
 #Min - 0.6179950833320618 and Max - 0.9302666783332825
 #Min - 0.4310002624988556 and Max - 1.9826102256774902
 class LineFollower(Node):
@@ -105,13 +105,13 @@ class LineFollower(Node):
         half_width = vectors.image_width / 2
         
         p_turn = 0.0
-        kP_base = 0.7
-        kD_base = 0.45
+        kP_base = 0.75
+        kD_base = 0.4
         
         # NOTE: participants may improve algorithm for line follower.
         
         if (vectors.vector_count == 0):  # none.
-            speed = SPEED_25_PERCENT
+            speed = 0.4
             p_turn = self.prevTurn*0.9
 
 
@@ -137,7 +137,7 @@ class LineFollower(Node):
         if self.obstacle_detected is True:
             # TODO: participants need to decide action on detection of obstacle.
             speed = 0.45
-            p_turn = -0.9*self.obs + p_turn*0.1            
+            p_turn = -0.95*self.obs + p_turn*0.05            
             
             # if self.closest >= 0.6:
             # # Maintain cruising speed
@@ -165,7 +165,7 @@ class LineFollower(Node):
 
         deviation_magnitude = abs(p_turn)
         kP = kP_base * (1 + deviation_magnitude)
-        kD = kD_base * (1 + deviation_magnitude)
+        kD = kD_base * (0.7 + deviation_magnitude)
         derivative_turn = (turn - self.prevTurn)
 
         turn = kP * p_turn + kD * derivative_turn
@@ -182,7 +182,7 @@ class LineFollower(Node):
             '''change it to reduce speed close to the ramp'''
             print("ramp/bridge detected")
 
-        if self.prevSpeed < 0.75 and speed > 0.54 and self.obstacle_detected is False:
+        if self.prevSpeed < 0.8 and speed > 0.54 and self.obstacle_detected is False:
             speed = 0.995*self.prevSpeed + 0.005*speed
 
         
@@ -269,7 +269,7 @@ class LineFollower(Node):
                 if angleFront*angleFront2>0:
                     if angleFront > 0:
                         angleFront = angleFront2
-                        #angleSafe = np.arctan(SAFE_DISTANCE_STRAIGHT/front_ranges[i])
+                        angleSafe = np.arctan(SAFE_DISTANCE_STRAIGHT/front_ranges[i])
                         #angleFront = min(angleFront, angleFront2)
                         #angleFront = (PI/2 - theta) - angleFront
                     else:
@@ -366,11 +366,11 @@ class LineFollower(Node):
             if close[0] < close[1]:
                 angleSafe = np.arctan(0.05/close[0])
                 angle = angles[1] + 0.9*angles[2]
-                angle += np.abs(angleSafe)*np.sign(angle)
+                #angle += np.abs(angleSafe)*np.sign(angle)
             else:
                 angleSafe = np.arctan(0.05/close[1])
                 angle = 0.9*angles[1] + angles[2]
-                angle += np.abs(angleSafe)*np.sign(angle)
+                #angle += np.abs(angleSafe)*np.sign(angle)
 
             if angle*angles[0]>0:
                 self.obs = angles[0] + angle
@@ -393,11 +393,11 @@ class LineFollower(Node):
             if close[0] < close[1]:
                 angleSafe = np.arctan(0.05/close[0])
                 self.obs = np.dot(angles, [1,0.9])
-                self.obs += np.abs(angleSafe)*np.sign(self.obs)
+                #self.obs += np.abs(angleSafe)*np.sign(self.obs)
             else:
                 angleSafe = np.arctan(0.05/close[1])
                 self.obs = np.dot(angles, [0.9, 1]) 
-                self.obs += np.abs(angleSafe)*np.sign(self.obs)
+                #self.obs += np.abs(angleSafe)*np.sign(self.obs)
             print(f"Final {self.obs}")
         
         if len(angles) == 1:
