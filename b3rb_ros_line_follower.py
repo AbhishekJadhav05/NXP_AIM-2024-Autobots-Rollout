@@ -148,12 +148,12 @@ class LineFollower(Node):
             print("ramp/bridge detected")
 
         if self.prevSpeed < 0.85 and speed > 0.54 and self.obstacle_detected is False:
-            speed = 0.995*self.prevSpeed + 0.005*speed
+            speed = 0.997*self.prevSpeed + 0.003*speed
 
         if self.obstacle_detected is True:
             # TODO: participants need to decide action on detection of obstacle.
             speed = 0.45
-            turn = -0.9*self.obs + turn*0.1
+            turn = -0.75*self.obs + turn*0.25
             #print("obstacle detected") 
         #While goind down/ after ramp to avoid bouncing of buggs
         
@@ -292,18 +292,22 @@ class LineFollower(Node):
             return
         
         if len(angles) == 2 and angles[0] == angleFront:
-            print('2 w front')
-            self.obs = np.dot(angles, [1,1])
+            if angles[0]*angles[1]>0:
+                self.obs = np.dot(angles, [1,1])
+            else:
+                self.obs = angles[0] + angles[1]
             return
         
         elif len(angles) == 2:
             print('2 sides')
             if close[0] < close[1]:
                 angleSafe = np.arctan(SAFE_DISTANCE/side_ranges_right[i])
-                self.obs = np.dot(angles, [1, 0.9]) + np.abs(angleSafe)*np.sign(angleAvoidance)
+                self.obs = np.dot(angles, [1, 0.9]) 
+                self.obs += np.abs(angleSafe)*np.sign(self.obs)
             else:
                 angleSafe = np.arctan(SAFE_DISTANCE/side_ranges_left[i])
-                self.obs = np.dot(angles, [0.9, 1]) + np.abs(angleSafe)*np.sign(angleAvoidance)
+                self.obs = np.dot(angles, [0.9, 1])
+                self.obs += np.abs(angleSafe)*np.sign(self.obs)
             return
         if len(angles) == 1:
             print('1')
