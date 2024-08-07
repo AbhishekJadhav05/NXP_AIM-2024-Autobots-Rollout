@@ -25,13 +25,13 @@ SPEED_25_PERCENT = SPEED_MAX / 4
 SPEED_50_PERCENT = SPEED_25_PERCENT * 2
 SPEED_75_PERCENT = SPEED_25_PERCENT * 3
 
-THRESHOLD_OBSTACLE_VERTICAL = 0.8
+THRESHOLD_OBSTACLE_VERTICAL = 0.7
 THRESHOLD_OBSTACLE_HORIZONTAL = 0.45
 THRESHOLD_RAMP_MIN = 0.9 #0.7
 THRESHOLD_RAMP_MAX = 1.1
 
 SAFE_DISTANCE = 0.25
-SAFE_DISTANCE_STRAIGHT = 1.2
+SAFE_DISTANCE_STRAIGHT = 0.6
 
 class LineFollower(Node):
     """ Initializes line follower node with the required publishers and subscriptions.
@@ -44,6 +44,7 @@ class LineFollower(Node):
         self.min, self.max = 10, 0
         self.obs = 0
         self.speed, self.turn = 0.0, 0.0
+        self.doubleCheck = 0
 
         # Subscription for LIDAR data.
         self.subscription_lidar = self.create_subscription(
@@ -134,10 +135,13 @@ class LineFollower(Node):
             #print("TWO (2) Vectors formed.")
 
         if self.obstacle_detected is True:
+            if self.doubleCheck != 1:
             # TODO: participants need to decide action on detection of obstacle.
-            speed = 0.45
-            p_turn = -0.95*self.obs + p_turn*0.05
-            apply_pid = False
+                speed = 0.45
+                p_turn = -0.95*self.obs + p_turn*0.05
+                apply_pid = False
+            else :
+                speed = SPEED_MAX
             
             
         if apply_pid:
@@ -168,6 +172,7 @@ class LineFollower(Node):
         self.prevSpeed = speed
         self.prevTurn = turn
         #print(f"Turn : {turn} and speed : {speed}")
+        print("speed : ",speed)
         self.rover_move_manual_mode(speed, turn)
     """ Updates instance member with traffic status message received from /traffic_status.
         Args:
@@ -189,6 +194,7 @@ class LineFollower(Node):
         shield_horizontal = 1
         theta = math.atan(shield_vertical / shield_horizontal)  #75.96
         self.ramp_detected = False
+        self.doubleCheck = 0
 
         angles = []
         self.closest = 2
@@ -308,6 +314,8 @@ class LineFollower(Node):
         
         elif len(angles) == 2:
             print('2 sides')
+            self.doubleCheck = 1
+            '''
             if close[0] < close[1]:
                 angleSafe = np.arctan(SAFE_DISTANCE/close[0])
                 self.obs = np.dot(angles, [1,0.9])
@@ -317,7 +325,7 @@ class LineFollower(Node):
                 self.obs = np.dot(angles, [0.9, 1]) 
                 self.obs += np.abs(angleSafe)*np.sign(self.obs)
             print(f"Final {self.obs}")
-        
+        '''
         if len(angles) == 1:
             print('1')
             return
