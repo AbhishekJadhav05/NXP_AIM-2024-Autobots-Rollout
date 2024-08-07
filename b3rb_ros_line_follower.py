@@ -29,7 +29,7 @@ SPEED_75_PERCENT = SPEED_25_PERCENT * 3
 THRESHOLD_OBSTACLE_VERTICAL = 0.75
 THRESHOLD_OBSTACLE_HORIZONTAL = 0.45
 THRESHOLD_RAMP_MIN = 0.9 #0.7
-THRESHOLD_RAMP_MAX = 1.1
+THRESHOLD_RAMP_MAX = 1.2
 
 SAFE_DISTANCE = 0.3
 SAFE_DISTANCE_STRAIGHT = 0.25
@@ -113,7 +113,7 @@ class LineFollower(Node):
             # Calculate the magnitude of the x-component of the vector.
             deviation = vectors.vector_1[1].x - vectors.vector_1[0].x
             p_turn = deviation / half_width
-            speed = SPEED_50_PERCENT * (np.abs(math.cos(p_turn))**(1/2))
+            speed = SPEED_50_PERCENT * (np.abs(math.cos(p_turn))**(2/3))
             #speed = speed * (np.abs(math.cos(turn))**(1/2))
             #print("ONE (1) Vector formed")
 
@@ -152,12 +152,12 @@ class LineFollower(Node):
 
         if self.obstacle_detected is True:
             # TODO: participants need to decide action on detection of obstacle.
-            speed = 0.45
+            #speed = 0.45
             if self.obs is None:
                 turn = -0.3*self.obs + 0.7*turn
             else:
                 turn = -0.75*self.obs + turn*0.25
-            
+            speed = SPEED_50_PERCENT*(np.abs(math.cos(p_turn))**(2/3))
             #print("obstacle detected") 
         #While goind down/ after ramp to avoid bouncing of buggs
         
