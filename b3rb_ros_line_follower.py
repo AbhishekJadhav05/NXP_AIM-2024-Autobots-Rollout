@@ -105,8 +105,8 @@ class LineFollower(Node):
         half_width = vectors.image_width / 2
         
         p_turn = 0.0
-        kP_base = 0.8
-        kD_base = 0.45
+        kP_base = 0.95
+        kD_base = 0.5
         
         # NOTE: participants may improve algorithm for line follower.
         
@@ -137,7 +137,7 @@ class LineFollower(Node):
         if self.obstacle_detected is True:
             # TODO: participants need to decide action on detection of obstacle.
             speed = 0.45
-            p_turn = -0.95*self.obs + p_turn*0.05            
+            p_turn = -0.95*self.obs + p_turn*0.05 
             
             # if self.closest >= 0.6:
             # # Maintain cruising speed
@@ -169,7 +169,7 @@ class LineFollower(Node):
         derivative_turn = (turn - self.prevTurn)
 
         turn = kP * p_turn + kD * derivative_turn
-        
+           
 
         #make it less sensitive - can define new variables to make it look clean
         #speed = (kP) * speed + kD * (speed - self.prevSpeed)
