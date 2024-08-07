@@ -31,8 +31,8 @@ THRESHOLD_OBSTACLE_HORIZONTAL = 0.45
 THRESHOLD_RAMP_MIN = 0.9 #0.7
 THRESHOLD_RAMP_MAX = 1.1
 
-SAFE_DISTANCE = 0.2#0.175
-SAFE_DISTANCE_STRAIGHT = 0.2#0.175
+SAFE_DISTANCE = 0.175
+SAFE_DISTANCE_STRAIGHT = 0.175
 #Min - 0.6179950833320618 and Max - 0.9302666783332825
 #Min - 0.4310002624988556 and Max - 1.9826102256774902
 class LineFollower(Node):
@@ -105,8 +105,8 @@ class LineFollower(Node):
         half_width = vectors.image_width / 2
         
         p_turn = 0.0
-        kP_base = 0.75
-        kD_base = 0.4
+        kP_base = 0.8
+        kD_base = 0.45
         
         # NOTE: participants may improve algorithm for line follower.
         
