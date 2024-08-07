@@ -27,10 +27,10 @@ SPEED_75_PERCENT = SPEED_25_PERCENT * 3
 
 THRESHOLD_OBSTACLE_VERTICAL = 0.7
 THRESHOLD_OBSTACLE_HORIZONTAL = 0.45
-THRESHOLD_RAMP_MIN = 0.9 #0.7
-THRESHOLD_RAMP_MAX = 1.1
+THRESHOLD_RAMP_MIN = 1.1 #0.7
+THRESHOLD_RAMP_MAX = 1.4
 
-SAFE_DISTANCE = 0.25
+SAFE_DISTANCE = 0.4
 SAFE_DISTANCE_STRAIGHT = 0.6
 
 class LineFollower(Node):
@@ -45,6 +45,8 @@ class LineFollower(Node):
         self.obs = 0
         self.speed, self.turn = 0.0, 0.0
         self.doubleCheck = 0
+        self.angleLeft = 0
+        self.angleRight = 0
 
         # Subscription for LIDAR data.
         self.subscription_lidar = self.create_subscription(
@@ -104,7 +106,7 @@ class LineFollower(Node):
         half_width = vectors.image_width / 2
         
         p_turn = 0.0
-        kP_base = 0.65
+        kP_base = 0.7
         kD_base = 0.35
         apply_pid = True
         
@@ -121,7 +123,7 @@ class LineFollower(Node):
             # Calculate the magnitude of the x-component of the vector.
             deviation = vectors.vector_1[1].x - vectors.vector_1[0].x
             p_turn = deviation  / half_width
-            speed = SPEED_50_PERCENT * 0.9 * (np.abs(math.cos(p_turn))**(1/2))
+            speed = SPEED_50_PERCENT * 0.8 * (np.abs(math.cos(p_turn))**(1/2))
 
         if (vectors.vector_count == 2):  # straight.
             # Calculate the middle point of the x-components of the vectors.
@@ -138,10 +140,13 @@ class LineFollower(Node):
             if self.doubleCheck != 1:
             # TODO: participants need to decide action on detection of obstacle.
                 speed = 0.45
-                p_turn = -0.95*self.obs + p_turn*0.05
+                p_turn = -0.8*self.obs + p_turn*0.2
                 apply_pid = False
             else :
                 speed = SPEED_MAX
+
+            if self.angleRight>45 or self.angleRight>45:
+                p_turn = -0.3*self.obs + p_turn*0.7
             
             
         if apply_pid:
@@ -251,7 +256,7 @@ class LineFollower(Node):
 
         close = []
         #side_ranges_left.reverse()
-        angleLeft = 0.0
+        self.angleLeft = 0.0
         for i in range(len(side_ranges_left)):
             if (side_ranges_left[i] < THRESHOLD_OBSTACLE_HORIZONTAL):
                 #print("LEFT",min(side_ranges_left))
@@ -267,10 +272,10 @@ class LineFollower(Node):
                 if self.closest > side_ranges_left[i]:
                     self.closest = side_ranges_left[i]
                 break
-            angleLeft += message.angle_increment
+            self.angleLeft += message.angle_increment
         
         # process side Right
-        angleRight = 0.0
+        self.angleRight = 0.0
         side_ranges_right.reverse()
         for i in range(len(side_ranges_right)):
             if (side_ranges_right[i] < THRESHOLD_OBSTACLE_HORIZONTAL):
@@ -287,7 +292,7 @@ class LineFollower(Node):
                 if self.closest > side_ranges_right[i]:
                     self.closest = side_ranges_right[i]
                 break
-            angleRight += message.angle_increment
+            self.angleRight += message.angle_increment
         
         if len(angles) == 3:
             print('3')
