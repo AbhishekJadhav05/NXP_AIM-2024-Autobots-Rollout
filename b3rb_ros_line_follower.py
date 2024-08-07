@@ -21,7 +21,7 @@ RIGHT_TURN = -1.0
 TURN_MIN = 0.0
 TURN_MAX = 1.0
 SPEED_MIN = 0.0
-SPEED_MAX = 1.75
+SPEED_MAX = 1.6
 SPEED_25_PERCENT = SPEED_MAX / 4
 SPEED_50_PERCENT = SPEED_25_PERCENT * 2
 SPEED_75_PERCENT = SPEED_25_PERCENT * 3
@@ -72,7 +72,7 @@ class LineFollower(Node):
         self.traffic_status = TrafficStatus()
         self.obstacle_detected = False
         self.ramp_detected = False
-        self.LoopSetter()
+
     """ Operates the rover in manual mode by publishing on /cerebri/in/joy.
         Args:
             speed: the speed of the car in float. Range = [-1.0, +1.0];
@@ -105,7 +105,7 @@ class LineFollower(Node):
         
         p_turn = 0.0
         kP_base = 0.7
-        kD_base = 0.4
+        kD_base = 0.35
         
         # NOTE: participants may improve algorithm for line follower.
         
@@ -129,8 +129,8 @@ class LineFollower(Node):
             #print("TWO (2) Vectors formed.")
         
         deviation_magnitude = abs(p_turn)
-        kP = kP_base * (1 + deviation_magnitude)
-        kD = kD_base * (1 + deviation_magnitude)
+        kP = kP_base * (0.9 + deviation_magnitude)
+        kD = kD_base * (0.7 + deviation_magnitude)
         derivative_turn = (turn - self.prevTurn)
 
         turn = kP * p_turn + kD * derivative_turn
@@ -164,8 +164,9 @@ class LineFollower(Node):
                 speed = SPEED_MIN
             print("stop sign detected")
         
-        self.speed = speed
-        self.turn = turn
+        self.prevSpeed = speed
+        self.prevTurn = turn
+        self.rover_move_manual_mode(speed, turn)
     """ Updates instance member with traffic status message received from /traffic_status.
         Args:
             message: "~/cognipilot/cranium/src/synapse_msgs/msg/TrafficStatus.msg"
@@ -318,27 +319,6 @@ class LineFollower(Node):
                 return
             
         self.ramp_detected = False
-        
-        
-    def MainLoop(self):
-        self.prevSpeed = self.speed
-        self.prevTurn = self.turn
-        self.rover_move_manual_mode(self.speed, self.turn)
-
-    def LoopSetter(self):
-        """
-        This function is called when the node is started. It runs the main loop at a fixed rate.
-        """
-        
-        timerPeriod = 1/30
-        
-        try:
-            self.timer = self.create_timer(timerPeriod, self.MainLoop)
-
-        except KeyboardInterrupt:
-            print("ROS Interrupt Exception")
-            
-            exit(1)
 
 def main(args=None):
     rclpy.init(args=args)
