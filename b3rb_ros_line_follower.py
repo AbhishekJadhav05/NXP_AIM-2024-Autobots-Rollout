@@ -218,34 +218,32 @@ class LineFollower(Node):
                 angleSafe = np.arctan(SAFE_DISTANCE_STRAIGHT/front_ranges[i])
                 angleFront = angleAvoidance + np.abs(angleSafe)*np.sign(angleAvoidance) 
                 '''+ np.abs(angleSafe)'''
-                self.obs = angleFront
-                angles.append(angleFront)
+                #self.obs = angleFront
+                #angles.append(angleFront)
                 print('Front')
                 break
             angleFront += message.angle_increment
 
         
-        # angleFront2 = theta - PI / 2# - theta
-        # front_ranges.reverse()
-        # for i in range(len(front_ranges)):
-        #     #
-        #     if (front_ranges[i] < THRESHOLD_OBSTACLE_VERTICAL):
-        #         #print("FRONT",min(front_ranges))
-        #         self.obstacle_detected = True
-        #         angleAvoidance = angleFront2
-        #         angleSafe = np.arctan(SAFE_DISTANCE_STRAIGHT/front_ranges[i])
-        #         angleFront2 = angleAvoidance + np.abs(angleSafe)*np.sign(angleAvoidance) 
-        #         #print(angle1, angle12)
-        #         #angle one always has the opp sign as angle 12
-        #         angleFront = (angleFront - angleFront2)/2
-        #         self.obs = angleFront
-        #         #print(angle1)
+        angleFront2 = PI / 2 - theta
+        front_ranges.reverse()
+        for i in range(len(front_ranges)):
+            if (front_ranges[i] < THRESHOLD_OBSTACLE_VERTICAL):
+                self.obstacle_detected = True
+                if angleFront*angleFront2>0:
+                    if angleFront > 0:
+                        angleFront = angleFront2
+                        angleSafe = np.arctan(SAFE_DISTANCE_STRAIGHT/front_ranges[i])
+                    else:
+                        angleFront = angleFront
+                else:
+                    angleFront += (angleFront2*0.9)
+                angleFront += np.abs(angleSafe)*np.sign(angleFront)
+                self.obs = angleFront
+                angles.append(angleFront)
+                break
+            angleFront2 -= message.angle_increment
 
-        #         '''+ np.abs(angleSafe)'''
-        #         # self.obs = angle12
-        #         angles.append(angleFront)
-        #         break
-        #     angleFront2 += message.angle_increment
 
         close = []
         # process side Left
