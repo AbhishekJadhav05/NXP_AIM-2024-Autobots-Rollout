@@ -13,11 +13,11 @@ QOS_PROFILE_DEFAULT = 10
 #Custom
 from ultralytics import YOLO
 import logging
+import os
 
 logging.getLogger('ultralytics').setLevel(logging.CRITICAL)
 
-#path = os.path.join(os.path.dirname(__file__),'best(1).pt')
-path = '/home/gitaansh/cognipilot/cranium/src/b3rb_ros_line_follower/b3rb_ros_line_follower/best(1) (1).pt'
+path = os.path.join(os.path.dirname(__file__),'best(1) (1).pt')
 model = YOLO(path)
 
 class ObjectRecognizer(Node):
@@ -61,12 +61,7 @@ class ObjectRecognizer(Node):
 		results = model.predict(source=image, imgsz=640, conf=0.25)
 		for result in results:
 			if result.boxes:  
-				#p = 100*(result.boxes.xywh[0][2]*result.boxes.xywh[0][3])/(result.boxes.orig_shape[0]*result.boxes.orig_shape[1])
 				boxes = result.boxes.xyxy.cpu().numpy()
-				#confs = result.boxes.conf.cpu().numpy()
-				#classes = result.boxes.cls.cpu().numpy()
-
-				#for box, conf, cls in zip(boxes, confs, classes):
 				areas = []
 				for box in boxes:
 					x1, y1, x2, y2 = map(int, box)
@@ -74,8 +69,8 @@ class ObjectRecognizer(Node):
 					height = y2 - y1
 					areas.append(width*height)
 				print(areas)
-				if result.boxes.conf.tolist()[0] > 0.95 and max(areas) > 400:
-					#print(result.boxes.conf.tolist()[0])
+				if result.boxes.conf.tolist()[0] > 0.96 and max(areas) > 10000:
+					print(result.boxes.conf.tolist()[0])
 					traffic_status.stop_sign = True
 		
 		self.publisher_traffic.publish(traffic_status)
